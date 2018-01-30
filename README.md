@@ -1,5 +1,6 @@
 # Node2Vec JAVA
-参考http://snap.stanford.edu/node2vec/，在图的遍历时，通过p和q两个参数，平衡深度优先（DFS）和广度优先（BFS）。
+参考http://snap.stanford.edu/node2vec/。
+在图的遍历时，通过p和q两个参数，平衡深度优先（DFS）和广度优先（BFS）。
 git：https://github.com/snap-stanford/snap/tree/master/examples/node2vec
 
 预计实现三个部分：
