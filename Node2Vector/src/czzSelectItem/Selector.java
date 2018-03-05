@@ -1,14 +1,14 @@
 package czzSelectItem;
 
+import java.util.ArrayList;
 import java.util.Random;
 
 /**
  选择器，有一个数值不同的项目序列，按照数值占总数的比例随机选择一个项目
  @author CZZ*/
-public class Selector {
+public final class Selector {
 	
-	/**
-	 从项目权值列表中选择某个项目编号。把权值加在一起合并成一个桶，向桶里面随机丢一个点，看这个点落在通的那个组成部分中*/
+	/**根据权值直接选择*/
 	public static int select(float[] itemWeights) {
 		int ret = -1;
 		int n = itemWeights.length;
@@ -28,4 +28,77 @@ public class Selector {
 		}
 		return ret;
 	}
+	
+	/**
+	 权值序列转化为可能性序列*/
+	public static float[] toProbs(float[] itemWeights) {
+		int n = itemWeights.length;
+		float[] probs = new float[n];
+		float sum = 0;
+		int i;
+		for(i = 0; i <n ; i++) {
+			sum += itemWeights[i];
+		}
+		if(sum != 0) {					//只要有数值就可以比较大小，不能恰好是0
+			for(i = 0; i < n ; i++) {
+				probs[i] = itemWeights[i] / sum;
+			}
+		}
+		return probs;
+	}
+	
+	/**
+	 https://hips.seas.harvard.edu/blog/2013/03/03/the-alias-method-efficient-sampling-with-many-discrete-outcomes/
+	 ,处理可能性序列*/
+	public static ProbabilityPair[] alias_setup(float[] probs) {
+		int K = probs.length;
+		ProbabilityPair[] jq = new ProbabilityPair[K];
+		//jq.prop//q  = np.zeros(K)
+		//jq.index//J  = np.zeros(K, dtype=np.int)
+		
+		//# Sort the data into the outcomes with probabilities
+		//# that are larger and smaller than 1/K.
+		ArrayList<Integer> smaller = new ArrayList<Integer>();
+		ArrayList<Integer> larger = new ArrayList<Integer>();
+		int kk;
+		for(kk = 0; kk < K; kk++) {
+			float prob = probs[kk];
+			jq[kk] = new ProbabilityPair();
+			jq[kk].prob = K * prob;
+			if(jq[kk].prob < 1.0) smaller.add(kk);
+	        else larger.add(kk);
+		}
+		//# Loop though and create little binary mixtures that
+		//# appropriately allocate the larger outcomes over the
+		//# overall uniform mixture.
+		int small, large;
+		int sn, ln;
+		while (smaller.size() > 0 && larger.size() > 0){
+			sn = smaller.size() - 1;
+			small = smaller.get(sn);
+			smaller.remove(sn);
+			ln = larger.size() - 1;
+			large = larger.get(ln);
+			larger.remove(ln);
+			jq[small].index = large;
+			jq[large].prob = jq[large].prob - (1.0f - jq[small].prob);
+			if(jq[large].prob < 1.0) smaller.add(large);
+			else larger.add(large);
+		}
+		return jq;
+	}
+	
+	/**
+	 从处理后的可能性序列中选择一项*/
+	public static int alias_draw(ProbabilityPair[] jq) {
+		//Draw sample from a non-uniform discrete distribution using alias sampling.
+		int ret = -1;
+		int K = jq.length;
+		Random random = new Random();
+		int kk = (int)(Math.floor(random.nextFloat() * K));
+		if (random.nextFloat() < jq[kk].prob) ret = kk;
+		else ret = jq[kk].index;
+		return ret;
+	}
+		
 }

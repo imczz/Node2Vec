@@ -49,4 +49,11 @@ public class Edge<T> {
 	public Integer weight() {
 		return _weight;
 	}
+	
+	/**
+	 修改边的权值（边只是一个数据结构，在图中才有价值，推荐调用图的setEdgeWeight方法，避免无向图的修改问题）
+	 @deprecated*/
+	public void setWeight(Integer weight) {
+		this._weight = weight;
+	}
 }

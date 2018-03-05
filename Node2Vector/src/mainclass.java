@@ -1,9 +1,12 @@
-import czzGraph.Graph;
+//import czzGraph.Graph;
+import czzNode2Vec.Graph4N2V;
+import czzNode2Vec.Node2Vec;
 
 public class mainclass {
 
 	public static void main(String[] args) {
-		Graph<Integer> G = new Graph<Integer>(false, true);
+		/*
+		Graph G = new Graph(false, true);
 		int i;
 
 		for(i = 0; i < 6; i++) {
@@ -39,5 +42,12 @@ public class mainclass {
 		G.clear();
 		//System.out.println(G.loadGraphFromEdgeListFile("C:\\Users\\CZZ\\Desktop\\N2V\\graph\\karate.edgelist", false, false));
 		//System.out.println(G.toMatrixString());
+		*/
+		Graph4N2V<Integer> g = new Graph4N2V<Integer>();
+		g.loadGraphFromFile("C:\\Users\\CZZ\\Desktop\\N2V\\graph\\karate.edgelist", "edgelist", false, false);
+		Node2Vec n2v = new Node2Vec(g);
+		n2v.setParams(1, 1, 80, 10);
+		Integer[][] walks = n2v.simulate_walks();
+		System.out.println(walks.length);
 	}
 }

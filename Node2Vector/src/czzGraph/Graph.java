@@ -8,6 +8,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
 
@@ -178,6 +181,11 @@ public class Graph<T> {
 				ret = true;
 			}
 		}
+		if(!this.isDirected()) {		//无向图
+			if(this.getEdge(v2.getId(), v1.getId()) == null) {			//添加对称的边
+				this.addEdge(v2, v1, weight);
+			}
+		}
 		return ret;
 	}
 	
@@ -241,6 +249,11 @@ public class Graph<T> {
 				}
 			}
 		}
+		if(!this.isDirected()) {		//无向图
+			if(this.getEdge(v2.getId(), v1.getId()) != null) {		//删除对向边
+				this.removeEdge(v2, v1);
+			}
+		}
 		return ret;
 	}
 	
@@ -271,6 +284,18 @@ public class Graph<T> {
 	}
 	
 	/**
+	 修改边的权值（无向图会修改双向边的权值）
+	 @param id1 边的起始节点
+	 @param id2 边的到达节点
+	 @param weight 修改后的数值
+	 @return 没有返回值，使用方法前需要检查边是否存在*/
+	@SuppressWarnings("deprecation")
+	public void setEdgeWeight(int id1, int id2, Integer weight) {
+		this.getEdge(id1, id2).setWeight(weight);
+		if(!this._isDirected) this.getEdge(id2, id1).setWeight(weight);
+	}
+	
+	/**
 	 清空图*/
 	public void clear() {
 		if(!this.isEmpty()) {
@@ -290,6 +315,67 @@ public class Graph<T> {
 			this._edgeList.clear();
 			this._nodeList.clear();
 		}
+	}
+	
+	/**
+	 转换为无向图图，需要检查每一个边
+	 @param saveHalf true去掉半个边的方向（增加反向边），false 直接抛弃半个边
+	 @return 无向图 true,有向图 false*/
+	public boolean toUndirected(boolean saveHalf) {
+		ArrayList<weitingEdge> halfEdgeList = new ArrayList<weitingEdge>();
+		Iterator<Entry<Integer, HashMap<Integer, Edge<T>>>> iter = this._edgeList.entrySet().iterator();
+		while (iter.hasNext()) {
+			Map.Entry<Integer, HashMap<Integer, Edge<T>>> entry = (Map.Entry<Integer, HashMap<Integer, Edge<T>>>) iter.next();
+			Integer id1 = entry.getKey();
+			Iterator<Entry<Integer, Edge<T>>> iter2 = entry.getValue().entrySet().iterator();
+			while(iter2.hasNext()) {
+				Map.Entry<Integer, Edge<T>> entry2 = (Map.Entry<Integer, Edge<T>>) iter2.next();
+				Integer id2 = entry2.getKey();
+				Edge<T> edge12 = entry2.getValue();
+				//this.addEdge(id2, id1, edge12.weight());
+				if(this.getEdge(id2, id1) == null) {		//发现单向边
+					halfEdgeList.add(new weitingEdge(id1, id2, edge12.weight()));		//记录这半条边
+				}
+			}
+		}
+		//即使是在遍历集合的一重循环中，尝试改变集合的元素数量，也是一种很危险的行为，通常运行时都会抛出异常，所以我们先把需要改变的内容记录下来
+		int index;
+		while(halfEdgeList.size() > 0) {
+			index = halfEdgeList.size() - 1;
+			weitingEdge e = halfEdgeList.get(index);
+			if(saveHalf) {
+				this.addEdge(e.id2, e.id1, e.weight);			//补充反向边
+			}
+			else {
+				this.removeEdge(e.id1, e.id2);					//删除单向边
+			}
+		}
+		this._isDirected = false;
+		return(!this.isDirected());
+	}
+	
+	/**
+	 转换为有向图，可以直接改变_isDirected属性
+	 @return 有向图 true,无向图 false*/
+	public boolean toDirected() {
+		this._isDirected = true;
+		return(this.isDirected());
+	}
+	
+	/**
+	 转换为带权图，可以直接改变_isWeighted属性
+	 @return 带权图 true,无权图 false*/
+	public boolean toWeighted() {
+		this._isWeighted = true;
+		return(this.isWeighted());
+	}
+	
+	/**
+	 转换为带权图，可以直接改变_isWeighted属性
+	 @return 无权图 true,带权图 false*/
+	public boolean toUnWeighted() {
+		this._isWeighted = true;
+		return(this.isWeighted());
 	}
 	
 	/**
@@ -395,5 +481,33 @@ public class Graph<T> {
 			if(i != n - 1) str.append('\n');
 		}
 		return str;
+	}
+	
+	/**
+	 返回图的节点列表*/
+	public List<Integer> getNodesIdList() {
+		ArrayList<Integer> idList = new ArrayList<Integer>();
+		Iterator<Integer> iter = this._nodeList.keySet().iterator();
+		while (iter.hasNext()) {
+			idList.add(iter.next());
+		}
+		return idList;
+	}
+	
+	/**
+	 内部类：有向图转换为无向图的时候，对于单向边的记录结构*/
+	private class weitingEdge{
+		
+		public int id1;
+		
+		public int id2;
+		
+		public Integer weight;
+		
+		weitingEdge(int id1, int id2, Integer weight){
+			this.id1 = id1;
+			this.id2 = id2;
+			this.weight = weight;
+		}
 	}
 }
