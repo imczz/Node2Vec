@@ -76,6 +76,21 @@ public class Node<T> {
 	}
 	
 	/**
+	 节点的构造函数
+	 @param id 节点id
+	 @param name 预设节点名称
+	 @param element 节点中包含的元素*/
+	public Node(int id, String name, T element){
+		this._id = id;
+		this.name = name;
+		this._in_Degree = 0;
+		this._out_Degree = 0;
+		this._degree = 0;
+		_inNodeList = new HashMap<Integer, Node<T>>();
+		_outEdgeList = new HashMap<Integer, Edge<T>>();
+	}
+	
+	/**
 	 @return 节点的入度*/
 	public int getIn_Degree() {
 		return _in_Degree;
