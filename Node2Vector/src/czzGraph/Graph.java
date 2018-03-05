@@ -14,7 +14,7 @@ import java.util.Set;
 /**
 图 
 @author CZZ*/
-public class Graph {
+public class Graph<T> {
 	
 	/**
 	 初始化的随机id起点*/
@@ -30,19 +30,19 @@ public class Graph {
 	
 	/**
 	  节点集合*/
-	private HashMap<Integer, Node> _nodeList;
+	private HashMap<Integer, Node<T>> _nodeList;
 
 	/**
 	 边集合，采用邻接表形式，其中Node为起点*/
-	private HashMap<Integer, HashMap<Integer, Edge>> _edgeList;
+	private HashMap<Integer, HashMap<Integer, Edge<T>>> _edgeList;
 	
 	/*================================方法 methods================================*/
 
 	/**
 	 图的默认构造函数*/
 	public Graph() {
-		_nodeList = new HashMap<Integer, Node>();
-		_edgeList = new HashMap<Integer, HashMap<Integer, Edge>>();
+		_nodeList = new HashMap<Integer, Node<T>>();
+		_edgeList = new HashMap<Integer, HashMap<Integer, Edge<T>>>();
 		Random rand = new Random(65535);
 		random = rand.nextInt();
 		this._isDirected = false;
@@ -54,8 +54,8 @@ public class Graph {
 	 @param isDirected 是否为有向图
 	 @param isWeighted 是否为带权图*/
 	public Graph(boolean isDirected, boolean isWeighted) {
-		_nodeList = new HashMap<Integer, Node>();
-		_edgeList = new HashMap<Integer, HashMap<Integer, Edge>>();
+		_nodeList = new HashMap<Integer, Node<T>>();
+		_edgeList = new HashMap<Integer, HashMap<Integer, Edge<T>>>();
 		Random rand = new Random(65535);
 		random = rand.nextInt();
 		this._isDirected = isDirected;
@@ -69,7 +69,7 @@ public class Graph {
 	/**
 	 @param id 节点的id
 	 @return 节点的引用*/
-	public Node getNode(int id) {
+	public Node<T> getNode(int id) {
 		return this._nodeList.get(id);
 	}
 	
@@ -77,9 +77,9 @@ public class Graph {
 	 @param id1 起点id
 	 @param id2 终点id
 	 @return 边的引用*/
-	public Edge getEdge(int id1, int id2) {
-		Edge ret = null;
-		HashMap<Integer, Edge> edgeMap = this._edgeList.get(id1);
+	public Edge<T> getEdge(int id1, int id2) {
+		Edge<T> ret = null;
+		HashMap<Integer, Edge<T>> edgeMap = this._edgeList.get(id1);
 		if(edgeMap != null) {
 			ret = edgeMap.get(id2);
 		}
@@ -103,7 +103,7 @@ public class Graph {
 	public boolean addNode(int id, String name) {
 		boolean notexist = false;
 		if(_nodeList.get(id) == null) {
-			_nodeList.put(id, new Node(id, name));
+			_nodeList.put(id, new Node<T>(id, name));
 			notexist = true;
 		}
 		return notexist;
@@ -151,8 +151,8 @@ public class Graph {
 	 * @return 操作成功返回true
 	 */
 	public boolean addEdge(int id1, int id2, int weight) {
-		Node v1 = this._nodeList.get(id1);
-		Node v2 = this._nodeList.get(id2);
+		Node<T> v1 = this._nodeList.get(id1);
+		Node<T> v2 = this._nodeList.get(id2);
 		return addEdge(v1, v2, weight);
 	}
 	
@@ -161,18 +161,18 @@ public class Graph {
 	 * @param v2 节点2
 	 * @return 操作成功返回true
 	 */
-	public boolean addEdge(Node v1, Node v2, int weight) {
+	public boolean addEdge(Node<T> v1, Node<T> v2, int weight) {
 		boolean ret = false;
 		if(v1 != null && v2!= null) {
-			HashMap<Integer, Edge> eV1 = this._edgeList.get(v1.getId());
+			HashMap<Integer, Edge<T>> eV1 = this._edgeList.get(v1.getId());
 			if(eV1 == null) {
-				eV1 = new HashMap<Integer, Edge>();			//如果没有分配空间，则现场分配
+				eV1 = new HashMap<Integer, Edge<T>>();			//如果没有分配空间，则现场分配
 				this._edgeList.put(v1.getId(), eV1);
 			}
 			int id2 = v2.getId();
 			if(eV1.get(id2) == null) {						//避免重复插入
-				Edge newEdge = new Edge(v1, v2, weight);
-				eV1.put(id2, new Edge(v1, v2, weight));			//插入新的边
+				Edge<T> newEdge = new Edge<T>(v1, v2, weight);
+				eV1.put(id2, new Edge<T>(v1, v2, weight));			//插入新的边
 				v1.arriveAt(newEdge);					//v1记录有一条新边
 				v2.comeFrom(v1);						//v2记录v1可以到达v2
 				ret = true;
@@ -186,19 +186,19 @@ public class Graph {
 	 @return 删除前节点的度*/
 	public int removeNode(int id) {
 		int ret = -1;
-		Node v = this._nodeList.get(id);
+		Node<T> v = this._nodeList.get(id);
 		if(v != null) {
 			ret = v.getDegree();
-			HashMap<Integer, Edge> outEdgeList = this._edgeList.get(id);
+			HashMap<Integer, Edge<T>> outEdgeList = this._edgeList.get(id);
 			if(outEdgeList != null) {
 				outEdgeList.clear();			//1.删除由此节点出发的边
 			}
 			this._edgeList.remove(id);
 			
-			HashMap<Integer, Node> inNodeList = v.getInNodeList();
+			HashMap<Integer, Node<T>> inNodeList = v.getInNodeList();
 			Set<Integer> inNodeKeySet = inNodeList.keySet();		//id集合
 			Iterator<Integer> iter = inNodeKeySet.iterator();		//迭代器
-			HashMap<Integer, Edge> v1ev2Set = null;			//从起点出发，到达此节点的边的集合
+			HashMap<Integer, Edge<T>> v1ev2Set = null;			//从起点出发，到达此节点的边的集合
 			int v1id = -1;									//临时起点v1的id
 			while(iter.hasNext()) {
 				v1id = iter.next();
@@ -218,7 +218,7 @@ public class Graph {
 	/**
 	 从图中删除节点v
 	 @return 删除前节点的度*/
-	public int removeNode(Node v) {
+	public int removeNode(Node<T> v) {
 		int id = v.getId();
 		return removeNode(id);
 	}
@@ -228,10 +228,10 @@ public class Graph {
 	 @param v1 边的起点
 	 @param v2 边的终点
 	 @return 删除结果，true删除成功*/
-	public boolean removeEdge(Node v1, Node v2) {
+	public boolean removeEdge(Node<T> v1, Node<T> v2) {
 		boolean ret = false;
 		if(v1 != null && v2 != null) {
-			HashMap<Integer, Edge> v1Set = this._edgeList.get(v1.getId());
+			HashMap<Integer, Edge<T>> v1Set = this._edgeList.get(v1.getId());
 			if(v1Set!=null) {
 				if(v1Set.get(v2.getId()) != null) {
 					v1Set.remove(v2.getId());
@@ -250,8 +250,8 @@ public class Graph {
 	 @param id2 终点的id
 	 @return 删除结果，true删除成功*/
 	public boolean removeEdge(int id1, int id2) {
-		Node v1 = this._nodeList.get(id1);
-		Node v2 = this._nodeList.get(id2);
+		Node<T> v1 = this._nodeList.get(id1);
+		Node<T> v2 = this._nodeList.get(id2);
 		return removeEdge(v1, v2);
 	}
 	
@@ -260,11 +260,11 @@ public class Graph {
 	 @param id1 起点的id
 	 @param id2 终点的id
 	 @return 删除结果，true删除成功*/
-	public boolean removeEdge(Edge vv) {
+	public boolean removeEdge(Edge<T> vv) {
 		boolean ret = false;
 		if(vv != null) {
-			Node v1 = vv.getV1();
-			Node v2 = vv.getV2();
+			Node<T> v1 = vv.getV1();
+			Node<T> v2 = vv.getV2();
 			ret = removeEdge(v1, v2);
 		}
 		return ret;
@@ -355,7 +355,7 @@ public class Graph {
 			tempid = iter.next();
 			idList.add(tempid);
 		}
-		HashMap<Integer, Edge> v1Edges = null;
+		HashMap<Integer, Edge<T>> v1Edges = null;
 		for(i = -1; i < n; i++) {
 			if(i >= 0) v1Edges = this._edgeList.get(idList.get(i));
 			for(j = -1; j < n; j++) {
@@ -369,7 +369,7 @@ public class Graph {
 					else {
 						boolean flag1 = true;
 						if(v1Edges != null) {			//行头的节点存在可达节点
-							Edge e = v1Edges.get(idList.get(j));			
+							Edge<T> e = v1Edges.get(idList.get(j));			
 							if(e != null) {					//该节点可达
 								if(this.isWeighted()) {			//带权图
 									str.append(e.weight());

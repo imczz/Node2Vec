@@ -6,9 +6,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 /**
-图中的节点
+图中的节点,T为节点装载的内容的类型
 @author CZZ*/
-public class Node {
+public class Node<T> {
 
 	/**
 	 编号或者节点标志号*/
@@ -19,12 +19,16 @@ public class Node {
 	public String name;
 	
 	/**
+	 * 类型为T的节点的内容*/
+	T element;
+	
+	/**
 	  出发可以到达的节点*/
-	private HashMap<Integer, Node> _inNodeList;
+	private HashMap<Integer, Node<T>> _inNodeList;
 	
 	/**
 	  本节点有哪些出边*/
-	private HashMap<Integer, Edge> _outEdgeList;
+	private HashMap<Integer, Edge<T>> _outEdgeList;
 	
 	/**
 	  节点所在的图*/
@@ -53,8 +57,8 @@ public class Node {
 		this._in_Degree = 0;
 		this._out_Degree = 0;
 		this._degree = 0;
-		_inNodeList = new HashMap<Integer, Node>();
-		_outEdgeList = new HashMap<Integer, Edge>();
+		_inNodeList = new HashMap<Integer, Node<T>>();
+		_outEdgeList = new HashMap<Integer, Edge<T>>();
 	}
 	
 	/**
@@ -67,8 +71,8 @@ public class Node {
 		this._in_Degree = 0;
 		this._out_Degree = 0;
 		this._degree = 0;
-		_inNodeList = new HashMap<Integer, Node>();
-		_outEdgeList = new HashMap<Integer, Edge>();
+		_inNodeList = new HashMap<Integer, Node<T>>();
+		_outEdgeList = new HashMap<Integer, Edge<T>>();
 	}
 	
 	/**
@@ -98,19 +102,19 @@ public class Node {
 
 	/**
 	 @return 可以到达此节点的节点列表*/
-	public HashMap<Integer, Node> getInNodeList(){
+	public HashMap<Integer, Node<T>> getInNodeList(){
 		return this._inNodeList;
 	}
 	
 	/**
 	 @return 出边列表*/
-	public HashMap<Integer, Edge> getOutEdgeList(){
+	public HashMap<Integer, Edge<T>> getOutEdgeList(){
 		return this._outEdgeList;
 	}
 	
 	/**
 	 记录：当前节点可以通过边v1ev2到达节点v2*/
-	public boolean arriveAt(Edge v1ev2) {
+	public boolean arriveAt(Edge<T> v1ev2) {
 		boolean notexist = false;
 		int v2id = v1ev2.getV2().getId();
 		if(this._outEdgeList.get(v2id) == null){
@@ -123,7 +127,7 @@ public class Node {
 	
 	/**
 	 记录：某个节点v1可以到达当前节点*/
-	public boolean comeFrom(Node v1) {
+	public boolean comeFrom(Node<T> v1) {
 		boolean notexist = false;
 		int v1id =v1.getId();
 		if(this._inNodeList.get(v1id) == null){
@@ -137,7 +141,7 @@ public class Node {
 	/**
 	 图在删除某个节点之后v，其他节点响应此删除操作，切断与这个节点的联系
 	 @param v 图中被删除的节点v*/
-	public int removeNode(Node v) {
+	public int removeNode(Node<T> v) {
 		int id = v.getId();
 		return removeNode(id);
 	}
@@ -147,13 +151,13 @@ public class Node {
 	 @param id 图中被删除的节点的id*/
 	public int removeNode(int id) {
 		int ret = 0;
-		Node inNode = _inNodeList.get(id);
+		Node<T> inNode = _inNodeList.get(id);
 		if(inNode != null) {
 			_inNodeList.remove(id);
 			this._in_Degree--;
 			ret += 1;
 		}
-		Edge outEdge = _outEdgeList.get(id);
+		Edge<T> outEdge = _outEdgeList.get(id);
 		if(outEdge != null) {
 			_outEdgeList.remove(id);
 			this._out_Degree--;
@@ -191,7 +195,7 @@ public class Node {
 	 @param v1 起点
 	 @param v2 终点
 	 */
-	public boolean removeEdge(Node v1, Node v2) {
+	public boolean removeEdge(Node<T> v1, Node<T> v2) {
 		int id1 = v1.getId();
 		int id2 = v2.getId();
 		return removeEdge(id1, id2);
@@ -200,7 +204,7 @@ public class Node {
 	/**
 	 删除在节点中保存的边vv的引用
 	 @param vv 待删除的边*/
-	public boolean removeEdge(Edge vv) {
+	public boolean removeEdge(Edge<T> vv) {
 		int id1 = vv.getV1().getId();
 		int id2 = vv.getV2().getId();
 		return removeEdge(id1, id2);
@@ -212,8 +216,8 @@ public class Node {
 	 @return 0不可达，1id节点到达此节点，2此节点可以到达id节点，3互相可达*/
 	public int judgeNode(int id) {
 		int ret = 0;
-		Node in = this._inNodeList.get(id);
-		Edge out = this._outEdgeList.get(id);
+		Node<T> in = this._inNodeList.get(id);
+		Edge<T> out = this._outEdgeList.get(id);
 		if(in != null) {
 			if(out != null) ret = 3;
 			else ret = 1;
@@ -228,18 +232,18 @@ public class Node {
 	/**
 	  图删除此节点时，调用此方法，通知周边节点断开与此节点的联系*/
 	public boolean beforeDeleteSelf() {
-		Iterator<Entry<Integer, Node>> nodeIter = this._inNodeList.entrySet().iterator();
-		Map.Entry<Integer, Node> nodeEntry;
+		Iterator<Entry<Integer, Node<T>>> nodeIter = this._inNodeList.entrySet().iterator();
+		Map.Entry<Integer, Node<T>> nodeEntry;
 		while (nodeIter.hasNext()) {
-			nodeEntry = (Map.Entry<Integer, Node>) nodeIter.next();
-			((Node)nodeEntry.getValue()).removeNode(this);			//可以到达此节点的节点，删除此节点的引用
+			nodeEntry = (Map.Entry<Integer, Node<T>>) nodeIter.next();
+			((Node<T>)nodeEntry.getValue()).removeNode(this);			//可以到达此节点的节点，删除此节点的引用
 		}
 		_inNodeList.clear();									//释放自己的（入节点）记录
-		Iterator<Entry<Integer, Edge>> edgeIter = this._outEdgeList.entrySet().iterator();
-		Map.Entry<Integer, Edge> edgeEntry;
+		Iterator<Entry<Integer, Edge<T>>> edgeIter = this._outEdgeList.entrySet().iterator();
+		Map.Entry<Integer, Edge<T>> edgeEntry;
 		while (edgeIter.hasNext()) {
-			edgeEntry = (Entry<Integer, Edge>) edgeIter.next();
-			((Edge)edgeEntry.getValue()).getV2().removeNode(this);		//此节点可以到达的节点，删除此节点的引用
+			edgeEntry = (Entry<Integer, Edge<T>>) edgeIter.next();
+			((Edge<T>)edgeEntry.getValue()).getV2().removeNode(this);		//此节点可以到达的节点，删除此节点的引用
 		}
 		_outEdgeList.clear();									//释放自己的（出节点）记录
 		return true;

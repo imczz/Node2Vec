@@ -3,15 +3,15 @@ package czzGraph;
 /**
  图的边
 @author CZZ*/
-public class Edge {
+public class Edge<T> {
 	
 	/**
 	 起点*/
-	private Node _v1;
+	private Node<T> _v1;
 	
 	/**
 	 终点*/
-	private Node _v2;
+	private Node<T> _v2;
 	
 	/**
 	 边的权，
@@ -26,7 +26,7 @@ public class Edge {
 	
 	/**
 	 构造方法*/
-	public Edge(Node v1, Node v2, Integer weight) {
+	public Edge(Node<T> v1, Node<T> v2, Integer weight) {
 		this._v1 = v1;
 		this._v2 = v2;
 		this._weight = weight;
@@ -34,13 +34,13 @@ public class Edge {
 	
 	/**
 	 @return v1节点引用*/
-	public Node getV1() {
+	public Node<T> getV1() {
 		return _v1;
 	}
 	
 	/**
 	 @return v2节点引用*/
-	public Node getV2() {
+	public Node<T> getV2() {
 		return _v2;
 	}
 	

@@ -3,7 +3,7 @@ import czzGraph.Graph;
 public class mainclass {
 
 	public static void main(String[] args) {
-		Graph G = new Graph(false, true);
+		Graph<Integer> G = new Graph<Integer>(false, true);
 		int i;
 
 		for(i = 0; i < 6; i++) {
