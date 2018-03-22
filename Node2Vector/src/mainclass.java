@@ -1,5 +1,4 @@
 //import czzGraph.Graph;
-import czzNode2Vec.Graph4N2V;
 import czzNode2Vec.Node2Vec;
 
 public class mainclass {

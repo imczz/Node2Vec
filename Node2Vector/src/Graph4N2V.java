@@ -1,4 +1,4 @@
-package czzNode2Vec;
+
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -6,6 +6,7 @@ import java.util.List;
 
 import czzGraph.Edge;
 import czzGraph.Graph;
+import czzNode2Vec.IGraph;
 
 /**
  GraphForNodeToVec.专门为Node2Vec编写的图，用来进行图（Graph）模块与N2V模块的适配。实现接口IGraph，
