@@ -40,6 +40,10 @@ public class Word2Vec {
 	
 	/*================================方法 methods================================*/
 	
+	public Word2Vec() {
+
+	}
+	
 	/**
 	 获取维度大小*/
 	public int getDimensions() {
@@ -66,5 +70,13 @@ public class Word2Vec {
 
 	public int getMinWordCount() {
 		return minWordCount;
+	}
+
+	public int getLearnRate() {
+		return learnRate;
+	}
+
+	public void setLearnRate(int learnRate) {
+		this.learnRate = learnRate;
 	}
 }
