@@ -15,9 +15,23 @@ public class Word<T>{
 	/*================================方法 methods================================*/
 	
 	/**
+	 空构造方法*/
+	public Word() {
+		this.word = null;
+		this.wordFrequency = 0;
+	}
+	
+	/**
 	 构造方法*/
 	public Word(T word) {
 		this.word = word;
-		wordFrequency = 1;
+		this.wordFrequency = 1;
+	}
+	
+	/**
+	 构造方法*/
+	public Word(int wordFrequency) {
+		this.word = null;
+		this.wordFrequency = wordFrequency;
 	}
 }

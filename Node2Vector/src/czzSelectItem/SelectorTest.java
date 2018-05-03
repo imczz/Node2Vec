@@ -10,7 +10,7 @@ import org.junit.Test;
  根据概率，随机选择某个项目，单元测试
  @author CZZ*/
 public class SelectorTest {
-	int repeatNum = 100000000;
+	int repeatNum = 10000000;				//测试过100000000，约7.91s
 	float delta = 1e-3f;
 	
 	@Before
