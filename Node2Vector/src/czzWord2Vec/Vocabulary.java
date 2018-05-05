@@ -3,6 +3,7 @@ package czzWord2Vec;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
 
 /**
  词典，1.统计文章中的单词，2.适当过滤低频词，3.统计词频，4.按照需要建立词频Huffman树*/
@@ -15,6 +16,18 @@ public class Vocabulary<T> implements IVocabulary{
 	/**
 	 词典中词的索引，可以记录词典中是否存在某个单词，也可以记录这个单词在词典中的个位置编号*/
 	private HashMap<T, Integer> _wordIndex;
+	
+	/**
+	 词典长度，因为有可能过滤掉低频词，所以展示长度可能会减少*/
+	private int _vocabularyLength;
+	
+	/**
+	 最小词频，小于最小词频的词会被删除*/
+	private int _lessFrequency;
+	
+	/**
+	 第一个词，当词典处于排序状态，StartPointer就是第一个大于等于Lessfrequency的词的索引号（数组地址偏移量）,如果未过滤，为0*/
+	private int _startPointer;
 	
 	/**
 	 比较器类
@@ -33,24 +46,19 @@ public class Vocabulary<T> implements IVocabulary{
 	
 	/*================================方法 methods================================*/
 	
+	/**
+	 * 空参数构造方法*/
 	public Vocabulary() {
-		_vocabulary = new ArrayList<HWord<T> >();
-		_wordIndex = new HashMap<T, Integer>();
-		_isSorted = false;
-	}
-	
-	public boolean isSorted() {
-		return _isSorted;
-	}
-
-	/**
-	 获取词典长度*/
-	public int getVocabularySize() {
-		return _vocabulary.size();
+		this._vocabulary = new ArrayList<HWord<T> >();
+		this._wordIndex = new HashMap<T, Integer>();
+		this._isSorted = false;
+		this._lessFrequency = 0;				//不过滤低频词
+		this._startPointer = 0;
+		this._vocabularyLength = 0;
 	}
 	
 	/**
-	 重新建立词典的索引*/
+	 * 重新建立词典的索引*/
 	private void reIndex() {
 		_wordIndex.clear();
 		for(int i = 0; i < _vocabulary.size(); i++) {
@@ -59,13 +67,29 @@ public class Vocabulary<T> implements IVocabulary{
 	}
 	
 	/**
-	 词典中是否存在词语word*/
+	 * @return 词典是否按照词频排序*/
+	public boolean isSorted() {
+		return _isSorted;
+	}
+
+	/**
+	 * @return 词典总长度（不过滤低频词总长）*/
+	public int getVocabularySize() {
+		return _vocabulary.size();
+	}
+	
+	/**
+	 * @param word 待查找词
+	 * @return 词典中是否存在词语word*/
 	public boolean hasWord(T word) {
 		boolean ret = false;
 		if(_wordIndex.containsKey(word)) ret = true;
 		return ret;
 	}
 	
+	/**
+	 * @param word 词语
+	 * @return word在词典中存储的实例*/
 	public HWord<T> getWord(T word) {
 		HWord<T> ret = null;
 		if(hasWord(word)) ret = _vocabulary.get(_wordIndex.get(word));
@@ -73,7 +97,8 @@ public class Vocabulary<T> implements IVocabulary{
 	}
 	
 	/**
-	 从数组装载词典，并且计算词频*/
+	 * 从数组装载词典，并且计算词频
+	 * @param words 第一维是句子集合，第二维是句子中的每个词*/
 	public void loadVocabulary(T[][] words) {
 		int i, j;
 		for(i = 0; i < words.length; i++) {
@@ -85,7 +110,9 @@ public class Vocabulary<T> implements IVocabulary{
 	}
 	
 	/**
-	 向词典中装载词语*/
+	 * 向词典中添加1个词语，如果已经存在则词频+1
+	 * @param word 待添加的词语
+	 * @添加结果*/
 	public boolean addWord(T word) {
 		boolean ret = false;
 		if(_wordIndex.containsKey(word)) {
@@ -99,6 +126,10 @@ public class Vocabulary<T> implements IVocabulary{
 		return ret;
 	}
 	
+	/**
+	 * 移除某个词
+	 * @param word 转被删除的词语
+	 * @return 移除成功*/
 	public boolean removeWord(T word) {
 		boolean ret = false;
 		if(hasWord(word)) {
@@ -113,7 +144,7 @@ public class Vocabulary<T> implements IVocabulary{
 	}
 	
 	/**
-	 根据词典中词频排序，并且重建索引*/
+	 * 根据词典中词频排序，并且重建索引*/
 	public void sortVocabulary() {
 		_vocabulary.sort(new WordFrequencyComparer<T>());
 		reIndex();
@@ -121,31 +152,34 @@ public class Vocabulary<T> implements IVocabulary{
 	}
 
 	/**
-	 获得词典中每个词语的Huffman编码*/
+	 * 获得词典中每个词语的Huffman编码
+	 * @return 处理结果*/
 	public boolean getHuffmanCode() {
 		boolean ret = false;
-		if(this._vocabulary.size() < 2) return ret;		//只有一个节点，不编码
-		if(_isSorted) {
+		if(this.getVocabularyLength() < 2) return ret;		//没有节点或者，只有一个节点，不编码，返回false
+		if(_isSorted) {				//已经排序过
 			int i, j;		//i遍历叶子节点，j遍历中间节点
 			HWord<T> min1, min2, tempmin;			//最小的两个节点的引用
-			int min1n, min2n;				//最小的两个节点的索引
+			int min1n, min2n;				//还没有插入Huffman树的最小的两个节点的索引
 			HWord<T> parentNode;
 			ArrayList<HWord<T> > nodeList = new ArrayList<HWord<T> >();				//Huffman树中间节点，n-1个
 			HashMap<Integer, Integer> parentMap = new HashMap<Integer, Integer>();		//记录某个节点的父节点
 			int vLength = _vocabulary.size();						//词典长度
-			min1 = _vocabulary.get(0);
-			min2 = _vocabulary.get(1);
+			min1 = _vocabulary.get(_startPointer + 0);
+			min2 = _vocabulary.get(_startPointer + 1);
+			min1.code.clear();					//清空编码
+			min2.code.clear();
 			min1.code.add(new Byte((byte) 0));			//最小的是右孩子，编号0
 			min2.code.add(new Byte((byte) 1));			//次小的是左孩子，编号1
-			parentNode = new HWord<T>();
+			parentNode = new HWord<T>();				//生成第一个中间节点
 			parentNode.wordFrequency = min1.wordFrequency + min2.wordFrequency;		//父节点=左右孩子值的和
 			nodeList.add(parentNode);
-			parentMap.put(0, vLength);			//0与1的父节点都是nodeList的0号元素
-			parentMap.put(1, vLength);
-			i = 2;											//叶子节点指针位置
+			parentMap.put(_startPointer + 0, vLength);			//“0”与“1”的父节点都是nodeList的0号元素
+			parentMap.put(_startPointer + 1, vLength);
+			i = _startPointer + 2;							//叶子节点指针位置
 			j = 0;											//中间节点指针位置
 			int k;
-			for(k = 1; k < vLength - 1; k++) {
+			for(k = _startPointer + 1; k < vLength - 1; k++) {
 				tempmin = nodeList.get(j);
 				if (i < vLength && (min1 = _vocabulary.get(i)).wordFrequency < tempmin.wordFrequency) { //比较叶子节点与中间节点
 					min1n = i;
@@ -166,6 +200,8 @@ public class Vocabulary<T> implements IVocabulary{
 					min2n = vLength + j;
 					j++;
 				}
+				min1.code.clear();					//清空编码
+				min2.code.clear();
 				min1.code.add(new Byte((byte) 0));			//最小的是右孩子，编号0
 				min2.code.add(new Byte((byte) 1));			//次小的是左孩子，编号1
 				parentNode = new HWord<T>();
@@ -187,10 +223,60 @@ public class Vocabulary<T> implements IVocabulary{
 			}
 			nodeList.clear();
 			parentMap.clear();
-			ret = true;
+			ret = true;						//处理成功
 		}
 		
 		return ret;
 	}
+
+	/**
+	 * @return 词典长度*/
+	public int getVocabularyLength() {
+		this._vocabularyLength = this._vocabulary.size() - this._startPointer;
+		return _vocabularyLength;
+	}
+
+	/**
+	 * @return 设置的最小词频*/
+	public int getLessFrequency() {
+		return _lessFrequency;
+	}
+
+	/**
+	 * @return 词典数组中，大于等于最小词频的起始偏移量*/
+	public int getStartPointer() {
+		return _startPointer;
+	}
 	
+	/**
+	 * 过滤低频词，首先设置lessFrequency，之后排序（如果未排序），之后设置开始指针
+	 * @param lessFrequency 按照自然数lessFrequency过滤低频词
+	 * @return true过滤成功，或者false失败*/
+	public boolean frequencyFilter(int lessFrequency) {
+		boolean ret = false;
+		if(lessFrequency < 0) lessFrequency = 0;			//应该大于等于零
+		if(!this._isSorted) {			//如果没有排序
+			this.sortVocabulary();		//将词典排序
+		}
+		if(lessFrequency == 0) {						//不过滤
+			this._startPointer = -1;
+			this._vocabularyLength = _vocabulary.size();
+			ret = true;
+		}
+		else if(_vocabulary.size() > 0 && lessFrequency > _vocabulary.get(_vocabulary.size() - 1).wordFrequency) {		//全部过滤掉，错误的情况
+			this._startPointer = _vocabulary.size() - 1;
+			this._vocabularyLength = 0;
+		}
+		else {
+			Iterator<HWord<T>> iter = this._vocabulary.iterator();
+			this._startPointer = 0;
+			while(iter.hasNext()) {
+				if(iter.next().wordFrequency >= lessFrequency) break;			//大于（等于）最小词频，会被保留
+				this._startPointer++;
+			}
+			this._vocabularyLength = this._vocabulary.size() - this._startPointer;			//处理词典长度
+			ret = true;
+		}
+		return ret;
+	}
 }
