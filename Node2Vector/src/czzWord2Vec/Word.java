@@ -1,7 +1,8 @@
 package czzWord2Vec;
 
 /**
- 词语，待转换（嵌入，embedding）为向量的词语*/
+ 词语，待转换（嵌入，embedding）为向量的词语
+ @author CZZ*/
 public class Word<T>{
 	
 	/**

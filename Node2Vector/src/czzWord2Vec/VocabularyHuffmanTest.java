@@ -6,6 +6,9 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+/**
+ * 测试词典的生成哈夫曼树方法
+ * @author CZZ*/
 public class VocabularyHuffmanTest {
 
 	@Before

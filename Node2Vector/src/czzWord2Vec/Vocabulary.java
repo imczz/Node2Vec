@@ -6,7 +6,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 
 /**
- 词典，1.统计文章中的单词，2.适当过滤低频词，3.统计词频，4.按照需要建立词频Huffman树*/
+ 词典，1.统计文章中的单词，2.适当过滤低频词，3.统计词频，4.按照需要建立词频Huffman树
+ @author CZZ*/
 public class Vocabulary<T> implements IVocabulary{
 
 	/**

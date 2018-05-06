@@ -6,6 +6,9 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+/**
+ * ²âÊÔ´ÊµäÌí¼Ó´ÊÓïÉ¾³ı´ÊÓïµÈ¹¦ÄÜ
+ * @author CZZ*/
 public class VocabularyTest {
 
 	@Before

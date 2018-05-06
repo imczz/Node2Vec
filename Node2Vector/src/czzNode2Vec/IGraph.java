@@ -1,7 +1,8 @@
 package czzNode2Vec;
 
 /**
- * 图接口，Node2Vec类使用这个接口，其他开发者可以编写自己的类继承IGraph接口*/
+ * 图接口，Node2Vec类使用这个接口，其他开发者可以编写自己的类继承IGraph接口
+ * @author CZZ*/
 public interface IGraph {
 	
 	/**
