@@ -195,8 +195,9 @@ public class Node2Vec {
 	}
 	
 	/**
-	 重复随机遍历。Repeatedly simulate random walks from each node.*/
-	public Integer[][] simulate_walks() {
+	 重复随机遍历。Repeatedly simulate random walks from each node.
+	 @return 遍历结果*/
+	public ArrayList<Integer[]> simulate_walks() {
 		ArrayList<Integer[]> walks = new ArrayList<Integer[]>();
 		Integer[] nodes = this._G.nodesArray();
 		System.out.print("路径迭代");		//Walk iteration
@@ -210,8 +211,9 @@ public class Node2Vec {
 				walks.add(this.node2vec_walk(nodes[j]));
 			}	
 		}
-		Integer[][] ret = new Integer[walks.size()][];
+		/*Integer[][] ret = new Integer[walks.size()][];
 		ret = walks.toArray(ret);
-		return ret;
+		return ret;*/
+		return walks;
 	}
 }

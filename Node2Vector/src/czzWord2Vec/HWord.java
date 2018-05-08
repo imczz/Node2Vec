@@ -9,6 +9,8 @@ public class HWord<T> extends Word<T>{
 
 	public ArrayList<Byte> code;
 	
+	public ArrayList<Integer> point;
+	
 	/*================================·½·¨ methods================================*/
 	
 	/**
@@ -16,6 +18,7 @@ public class HWord<T> extends Word<T>{
 	public HWord() {
 		super();
 		code = new ArrayList<Byte>();
+		point = new ArrayList<Integer>();
 	}
 	
 	/**
@@ -23,6 +26,7 @@ public class HWord<T> extends Word<T>{
 	public HWord(T word) {
 		super(word);
 		code = new ArrayList<Byte>();
+		point = new ArrayList<Integer>();
 	}
 
 }

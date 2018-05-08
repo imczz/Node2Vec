@@ -75,7 +75,7 @@ public class Vocabulary<T> implements IVocabulary{
 
 	/**
 	 * @return 词典总长度（不过滤低频词总长）*/
-	public int getVocabularySize() {
+	public int getVocabularyFullSize() {
 		return _vocabulary.size();
 	}
 	
@@ -85,6 +85,15 @@ public class Vocabulary<T> implements IVocabulary{
 	public boolean hasWord(T word) {
 		boolean ret = false;
 		if(_wordIndex.containsKey(word)) ret = true;
+		return ret;
+	}
+	
+	/**
+	 * @param word 待查找词
+	 * @return 查找词语word在词典中的索引编号*/
+	public int getWordIndex(T word) {
+		int ret = -1;
+		if(hasWord(word)) ret = _wordIndex.get(word);
 		return ret;
 	}
 	
@@ -111,9 +120,23 @@ public class Vocabulary<T> implements IVocabulary{
 	}
 	
 	/**
+	 * 从句子列表装载词典，并且计算词频
+	 * @param words 第一维是句子集合，第二维是句子中的每个词*/
+	public void loadVocabulary(ArrayList<T[]> words) {
+		T[] arr;
+		for(int i = 0; i < words.size(); i++) {
+			arr = words.get(i);
+			for(int j = 0; j < arr.length; j++) {
+				addWord(arr[j]);
+			}
+		}
+		_isSorted = false;
+	}
+	
+	/**
 	 * 向词典中添加1个词语，如果已经存在则词频+1
 	 * @param word 待添加的词语
-	 * @添加结果*/
+	 * @return 添加结果*/
 	public boolean addWord(T word) {
 		boolean ret = false;
 		if(_wordIndex.containsKey(word)) {
@@ -125,6 +148,18 @@ public class Vocabulary<T> implements IVocabulary{
 		}
 		_isSorted = false;					//改为未排序状态
 		return ret;
+	}
+	
+	/**
+	 * 向词典中添加一个句子中的所有词语
+	 * @param word 待添加词语的句子
+	 * @return 添加结果*/
+	public boolean addWord(T[] words) {
+		for(int i = 0; i < words.length; i++) {
+			addWord(words[i]);
+		}
+		_isSorted = false;
+		return true;
 	}
 	
 	/**
@@ -165,7 +200,7 @@ public class Vocabulary<T> implements IVocabulary{
 			HWord<T> parentNode;
 			ArrayList<HWord<T> > nodeList = new ArrayList<HWord<T> >();				//Huffman树中间节点，n-1个
 			HashMap<Integer, Integer> parentMap = new HashMap<Integer, Integer>();		//记录某个节点的父节点
-			int vLength = _vocabulary.size();						//词典长度
+			int vLength = this.getVocabularyLength();						//词典长度
 			min1 = _vocabulary.get(_startPointer + 0);
 			min2 = _vocabulary.get(_startPointer + 1);
 			min1.code.clear();					//清空编码
@@ -219,8 +254,10 @@ public class Vocabulary<T> implements IVocabulary{
 				while(parentIndex != vLength * 2 - 2) {
 					parentNode = nodeList.get(parentIndex - vLength);		//获取父节点
 					leafNode.code.add(0, parentNode.code.get(0));	//父节点;
+					leafNode.point.add(0, parentIndex - vLength);
 					parentIndex = parentMap.get(parentIndex);			//父节点的父节点
 				}
+				leafNode.point.add(0, vLength - 2);
 			}
 			nodeList.clear();
 			parentMap.clear();
@@ -256,6 +293,7 @@ public class Vocabulary<T> implements IVocabulary{
 	public boolean frequencyFilter(int lessFrequency) {
 		boolean ret = false;
 		if(lessFrequency < 0) lessFrequency = 0;			//应该大于等于零
+		this._lessFrequency = lessFrequency;
 		if(!this._isSorted) {			//如果没有排序
 			this.sortVocabulary();		//将词典排序
 		}
