@@ -107,6 +107,15 @@ public class Vocabulary<T> implements IVocabulary{
 	}
 	
 	/**
+	 * @param word 词语
+	 * @return word在词典中存储的索引号*/
+	public HWord<T> getWordByIndex(int index) {
+		HWord<T> ret = null;
+		if(_vocabulary != null && index < _vocabulary.size()) ret = _vocabulary.get(index);
+		return ret;
+	}
+	
+	/**
 	 * 从数组装载词典，并且计算词频
 	 * @param words 第一维是句子集合，第二维是句子中的每个词*/
 	public void loadVocabulary(T[][] words) {

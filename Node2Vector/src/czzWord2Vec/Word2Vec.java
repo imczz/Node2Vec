@@ -232,9 +232,10 @@ public class Word2Vec<T> {
 			int localIteratorNumber = 1;			//当前迭代次数
 			int c;									//[1, windowSize]的随机窗口大小，使词语之间关系更为密切
 			Random rand = new Random();
-			HWord<T> word;
+			HWord<T> word;					//中心词
+			int wordIndex;					//中心词在词典中的索引号
 			T contextWord;							//上下文
-			int contextIndex;					//上下文的索引号
+			int contextIndex;					//上下文在词典中的索引号
 			int thetaIndex;						//西塔索引号
 			IVector e;
 			float f, g;
@@ -243,6 +244,9 @@ public class Word2Vec<T> {
 					T[] sentence = this.passags.getSentence(sentenceIndex);
 					for(int sentence_position = 0; sentence_position < sentence.length; sentence_position++) {
 						c = Math.max((rand.nextInt() + 11) % this.windowSize, 1);		//[1, windowSize]的随机窗口大小
+						wordIndex = this.vocabulary.getWordIndex(sentence[sentence_position]);
+						if(wordIndex < this.vocabulary.getStartPointer()) continue;				//当前词被过滤
+						wordIndex -= this.vocabulary.getStartPointer();		//因为有单词被过滤，所以model,theta等数组索引改变位置
 						word = this.vocabulary.getWord(sentence[sentence_position]);
 						this.learnRate *= 0.999f;							//减小学习率
 						if (this.learnRate < this.startLearnRate * 0.0001f) this.learnRate = this.startLearnRate * 0.0001f;
@@ -259,6 +263,8 @@ public class Word2Vec<T> {
 									contextWord = sentence[c];
 									contextIndex = this.vocabulary.getWordIndex(contextWord);
 									if(contextIndex == -1) continue;			//for (int i = c; i < this.windowSize * 2 + 1 - c; i++)
+									if(contextIndex < this.vocabulary.getStartPointer()) continue;			//当前词被过滤掉了
+									contextIndex -= this.vocabulary.getStartPointer();		//因为有单词被过滤，所以model,theta等数组索引改变位置
 									e = new CVector(this.dimensions);		//e=0
 									// HIERARCHICAL	SOFTMAX
 									if (this.trainMethod == TrainMethod.HS || this.trainMethod == TrainMethod.BOTH)
@@ -310,11 +316,12 @@ public class Word2Vec<T> {
 		BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file)));
 		String str;
         out.write(this.vocabulary.getVocabularyLength() + " " + this.dimensions + "\n");
-        for(int i = 0; i < this._models.length; i++) {
-        	out.write((i + 1) + " ");
-        	for(int j = 0; j < this._models[i].getVector().length; j++) {
+        for(int i = this.vocabulary.getStartPointer(); i < this.vocabulary.getVocabularyFullSize(); i++) {
+        	HWord<T> word = this.vocabulary.getWordByIndex(i);
+        	out.write(word.word + " ");
+        	for(int j = 0; j < this._models[i - this.vocabulary.getStartPointer()].getVector().length; j++) {
         		if(j != 0) out.write(" ");
-        		str = _models[i].getVector()[j] + "";
+        		str = _models[i - this.vocabulary.getStartPointer()].getVector()[j] + "";
         		out.write(str);
         	}
         	if(i != this._models.length - 1) out.write("\n");
