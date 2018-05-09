@@ -1,5 +1,10 @@
 package czzWord2Vec;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -55,6 +60,10 @@ public class Word2Vec<T> {
 	
 	/**
 	 设置一个初始化学习率*/
+	private float startLearnRate;
+	
+	/**
+	 当前学习率*/
 	private float learnRate;
 	
 	/**
@@ -116,7 +125,7 @@ public class Word2Vec<T> {
 		this.negative = negative;
 		this.dimensions = dimensions;
 		this.windowSize = windowSize;
-		this.learnRate = learnRate;
+		this.startLearnRate = learnRate;
 		this.minWordCount = minWordCount;
 		this.iteratorNumber = iteratorNumber;
 		this.threadNumber = threadNumber;
@@ -171,7 +180,7 @@ public class Word2Vec<T> {
 		}
 		
 		initModels();				//初始化参数
-		
+		this.learnRate = this.startLearnRate;
 		initialized = true;
 	}
 	
@@ -183,7 +192,8 @@ public class Word2Vec<T> {
 			if(va != null) {
 				Random rand = new Random();
 				for(int i = 0; i <va.length; i++) {
-					va[i] = (float) rand.nextDouble();
+					//va[i] = (float) rand.nextDouble();
+					va[i] = ((rand.nextFloat() - 0.5f) / this.dimensions);
 				}
 			}
 		}
@@ -234,6 +244,8 @@ public class Word2Vec<T> {
 					for(int sentence_position = 0; sentence_position < sentence.length; sentence_position++) {
 						c = Math.max((rand.nextInt() + 11) % this.windowSize, 1);		//[1, windowSize]的随机窗口大小
 						word = this.vocabulary.getWord(sentence[sentence_position]);
+						this.learnRate *= 0.999f;							//减小学习率
+						if (this.learnRate < this.startLearnRate * 0.0001f) this.learnRate = this.startLearnRate * 0.0001f;
 						if(this.modelType == ModelType.CBOW) {
 							//TODO
 						}//if(this.modelType == ModelType.CBOW)
@@ -283,5 +295,31 @@ public class Word2Vec<T> {
 	
 	public IVector[] getModels() {
 		return this._models;
+	}
+	
+	/**
+	 * 输出到文件file
+	 * @param file 会被写入的文件路径
+	 * @throws IOException */
+	public void outputFile(String file) throws IOException {
+		File f = new File(file);
+        if (f.exists()) {
+            f.delete();
+        }
+        f.createNewFile();
+		BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file)));
+		String str;
+        out.write(this.vocabulary.getVocabularyLength() + " " + this.dimensions + "\n");
+        for(int i = 0; i < this._models.length; i++) {
+        	out.write((i + 1) + " ");
+        	for(int j = 0; j < this._models[i].getVector().length; j++) {
+        		if(j != 0) out.write(" ");
+        		str = _models[i].getVector()[j] + "";
+        		out.write(str);
+        	}
+        	if(i != this._models.length - 1) out.write("\n");
+        }
+        out.flush();
+        out.close();
 	}
 }
