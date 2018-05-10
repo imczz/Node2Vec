@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Random;
 
 /**
  词典，1.统计文章中的单词，2.适当过滤低频词，3.统计词频，4.按照需要建立词频Huffman树
@@ -31,6 +32,14 @@ public class Vocabulary<T> implements IVocabulary{
 	private int _startPointer;
 	
 	/**
+	 * 词频随机数采样预制表长度*/
+	private int _unigramTableSize;
+	
+	/**
+	 * 词频随机数采样预制表*/
+	int[] _unigramTable;
+	
+	/**
 	 比较器类
 	 * @param <E> 单词的类型*/
 	class WordFrequencyComparer<E> implements Comparator<Word<E>>  {
@@ -56,6 +65,8 @@ public class Vocabulary<T> implements IVocabulary{
 		this._lessFrequency = 0;				//不过滤低频词
 		this._startPointer = 0;
 		this._vocabularyLength = 0;
+		this._unigramTableSize = 10000000;
+		this._unigramTable = null;
 	}
 	
 	/**
@@ -325,6 +336,36 @@ public class Vocabulary<T> implements IVocabulary{
 			this._vocabularyLength = this._vocabulary.size() - this._startPointer;			//处理词典长度
 			ret = true;
 		}
+		return ret;
+	}
+	
+	/**
+	 * 初始化用于负采样的预制表，通过随机数查表，得到单词，也就是完成了一次负采样*/
+	public void initUnigramTable() {
+		int a, i;
+		double train_words_pow = 0;				//总和
+		double d1, power = 0.75;					//x^a > x(<0a<1,0<1x)
+		this._unigramTable = new int[this._unigramTableSize];
+		for (a = 0; a < this.getVocabularyLength(); a++) train_words_pow += Math.pow(this._vocabulary.get(a).wordFrequency, power);
+		i = this.getStartPointer();
+		d1 = Math.pow(this._vocabulary.get(a).wordFrequency, power) / train_words_pow;
+		for (a = 0; a < this._unigramTableSize; a++) {
+			this._unigramTable[a] = i;
+			if (a / (double)this._unigramTableSize > d1) {
+				i++;
+				d1 += Math.pow(this._vocabulary.get(i).wordFrequency, power) / train_words_pow;
+			}
+			if (i >= this.getVocabularyLength()) i = this.getVocabularyLength() - 1;
+		}
+	}
+	
+	/**
+	 * 按照词频获取一个词
+	 * @return 被选择的词在词典中的索引号*/
+	public int negSamplingWord() {
+		int ret = -1;
+		Random rand = new Random();
+		ret = this._unigramTable[rand.nextInt(this._unigramTableSize)];
 		return ret;
 	}
 }

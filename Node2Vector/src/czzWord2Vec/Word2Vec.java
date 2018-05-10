@@ -1,8 +1,10 @@
 package czzWord2Vec;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
@@ -70,6 +72,8 @@ public class Word2Vec<T> {
 	 * 文章，每行一句，每句都是一串“词语”*/
 	private Passage<T> passags;
 	
+	/**
+	 * 预先计算一个sigmoid函数表，稍微提高效率*/
 	private ExpTable expTable;
 	
 	/**
@@ -119,6 +123,9 @@ public class Word2Vec<T> {
 		setParam(modelType, trainMethod, negative, dimensions, windowSize, learnRate, minWordCount, iteratorNumber, threadNumber);
 	}
 	
+	/**
+	 * 设置各个参数
+	 * @return 设置成功或者失败*/
 	private boolean setParam(ModelType modelType, TrainMethod trainMethod, int negative, int dimensions, int windowSize, float learnRate, int minWordCount, int iteratorNumber, int threadNumber) {
 		this.modelType = modelType;
 		this.trainMethod = trainMethod;
@@ -133,37 +140,51 @@ public class Word2Vec<T> {
 	}
 	
 	/**
-	 获取维度大小*/
+	 @return 维度大小*/
 	public int getDimensions() {
 		return dimensions;
 	}
 
 	/**
-	 获取窗口大小*/
+	 @return 窗口大小*/
 	public int getWindowSize() {
 		return windowSize;
 	}
 
+	/**
+	 * @return 迭代次数*/
 	public int getIteratorNumber() {
 		return iteratorNumber;
 	}
 
+	/**
+	 * @return 设置的线程数*/
 	public int getThreadNumber() {
 		return threadNumber;
 	}
 
+	/**
+	 * 设置线程数*/
 	public void setThreadNumber(int threadNumber) {
 		this.threadNumber = threadNumber;
 	}
 
+	/**
+	 * @return 设置的最小词频*/
 	public int getMinWordCount() {
 		return minWordCount;
 	}
 
+	/**
+	 * @return 当前的学习率*/
 	public float getLearnRate() {
 		return learnRate;
 	}
 
+	/**
+	 * 设置当前学习率
+	 * @deprecated
+	 * @param 设置学习率*/
 	public void setLearnRate(int learnRate) {
 		this.learnRate = learnRate;
 	}
@@ -177,6 +198,9 @@ public class Word2Vec<T> {
 		this.vocabulary.frequencyFilter(minWordCount);				//过滤低频词
 		if(this.trainMethod == TrainMethod.BOTH || this.trainMethod == TrainMethod.HS) {
 			this.vocabulary.getHuffmanCode();			//建立哈夫曼树，获得每个词的编码
+		}
+		if(this.trainMethod == TrainMethod.BOTH || this.trainMethod == TrainMethod.NS) {
+			this.vocabulary.initUnigramTable();			//建立用于负采样的表
 		}
 		
 		initModels();				//初始化参数
@@ -219,10 +243,47 @@ public class Word2Vec<T> {
 	}
 	
 	/**
-	 * 从训练好的文件读取参数*/
-	public boolean loadModels() {
-		//TODO
-		return false;
+	 * 从训练好的文件读取参数
+	 * @return 加载成功或失败*/
+	public boolean loadModels(String file) {
+		boolean ret = false;
+		File f = new File(file);
+        if (f.exists()) {				//文件存在
+        	BufferedReader reader = null; 
+        	try { 
+        		reader = new BufferedReader(new FileReader(file)); 
+        		String tempString = null;
+        		String[] str = null;
+        		tempString = reader.readLine();
+        		str = tempString.split(" ");
+        		if(str.length == 2) {
+        			int num = Integer.parseInt(str[0]);				//词语个数
+        			int dim = Integer.parseInt(str[1]);				//次向量维度
+        			if(num > 0 && dim > 0) _models = new IVector[num];
+        			for(int i = 0; i < num; i++) {
+        				_models[i] = new CVector(dim);
+        				tempString = reader.readLine();
+                		str = tempString.split(" ");
+        				for(int j = 0; j < dim; j++) {
+        					_models[i].getVector()[j] = Float.parseFloat(str[j + 1]);
+        				}
+        			}
+        		}
+        		reader.close();
+        		ret = true;
+        	} catch (IOException e) { 
+        		e.printStackTrace(); 
+        	} finally { 
+        		if (reader != null){ 
+        			try { 
+        				reader.close(); 
+        			} catch (IOException e1) { 
+        				
+        			} 
+        		} 
+        	} 
+        }
+		return ret;
 	}
 	
 	/**
@@ -237,6 +298,7 @@ public class Word2Vec<T> {
 			T contextWord;							//上下文
 			int contextIndex;					//上下文在词典中的索引号
 			int thetaIndex;						//西塔索引号
+			int target, label;
 			IVector e;
 			float f, g;
 			for(localIteratorNumber = 1; localIteratorNumber <= this.iteratorNumber; localIteratorNumber++) { //迭代次数
@@ -270,7 +332,7 @@ public class Word2Vec<T> {
 									if (this.trainMethod == TrainMethod.HS || this.trainMethod == TrainMethod.BOTH)
 										for	(int l = 0;	l <	word.code.size(); l++)		//从huffman路径分层SoftMax
 										{
-											thetaIndex = word.point.get(l);
+											thetaIndex = word.point.get(l) - this.vocabulary.getStartPointer();
 											// Propagate hidden -> output
 											f = this._models[contextIndex].multiply(this._huffmanTheta[thetaIndex]);	//f = x * theta;
 											if (f <= -this.expTable.getMaxX()) continue;
@@ -284,8 +346,29 @@ public class Word2Vec<T> {
 											this._huffmanTheta[thetaIndex].add(this._models[contextIndex].new_Multi(g));
 										}
 									// NEGATIVE	SAMPLING
-									if (negative > 0) {
-										//TODO
+									if (this.trainMethod == TrainMethod.NS || this.trainMethod == TrainMethod.BOTH) {
+										for (int d = 0; d < this.negative + 1; d++)
+										{
+											if (d == 0)
+											{
+												target = wordIndex;
+												label =	1;					//1个正例
+											}
+											else
+											{
+												target = this.vocabulary.negSamplingWord();
+												if (target == wordIndex) continue;
+												label =	0;					//negative个负例
+											}
+											thetaIndex = target - this.vocabulary.getVocabularyLength();
+											f = 0;
+											f += this._models[contextIndex].multiply(this._negTheta[thetaIndex]);
+											if (f > this.expTable.getMaxX()) g = (label - 1) * this.learnRate;
+											else if (f < -this.expTable.getMaxX()) g = (label - 0) * this.learnRate;
+											else g = (label - expTable.getSigmoid(f)) * this.learnRate;
+											e.add(this._negTheta[thetaIndex].new_Multi(g));				//e += g * theta
+											this._negTheta[thetaIndex].add(this._models[contextIndex].new_Multi(g));
+										}
 									}
 									// Learn weights input -> hidden
 									this._models[contextIndex].add(e);
@@ -298,7 +381,8 @@ public class Word2Vec<T> {
 		}//if(this.initialized)
 	}
 	
-	
+	/**
+	 * @return 模型的引用*/
 	public IVector[] getModels() {
 		return this._models;
 	}

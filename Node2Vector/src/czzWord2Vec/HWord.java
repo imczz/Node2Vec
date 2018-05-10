@@ -7,8 +7,12 @@ import java.util.ArrayList;
  @author CZZ*/
 public class HWord<T> extends Word<T>{
 
+	/**
+	 * huffman编码*/
 	public ArrayList<Byte> code;
 	
+	/**
+	 * huffman树中，从根节点到此叶子节点的非叶子节点序列*/
 	public ArrayList<Integer> point;
 	
 	/*================================方法 methods================================*/
