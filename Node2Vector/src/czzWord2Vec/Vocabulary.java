@@ -65,7 +65,7 @@ public class Vocabulary<T> implements IVocabulary{
 		this._lessFrequency = 0;				//²»¹ýÂËµÍÆµ´Ê
 		this._startPointer = 0;
 		this._vocabularyLength = 0;
-		this._unigramTableSize = 10000000;
+		this._unigramTableSize = 100000;
 		this._unigramTable = null;
 	}
 	
