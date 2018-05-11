@@ -348,7 +348,7 @@ public class Vocabulary<T> implements IVocabulary{
 		this._unigramTable = new int[this._unigramTableSize];
 		for (a = 0; a < this.getVocabularyLength(); a++) train_words_pow += Math.pow(this._vocabulary.get(a).wordFrequency, power);
 		i = this.getStartPointer();
-		d1 = Math.pow(this._vocabulary.get(a).wordFrequency, power) / train_words_pow;
+		d1 = Math.pow(this._vocabulary.get(i).wordFrequency, power) / train_words_pow;
 		for (a = 0; a < this._unigramTableSize; a++) {
 			this._unigramTable[a] = i;
 			if (a / (double)this._unigramTableSize > d1) {

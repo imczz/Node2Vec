@@ -360,7 +360,7 @@ public class Word2Vec<T> {
 												if (target == wordIndex) continue;
 												label =	0;					//negative¸ö¸ºÀý
 											}
-											thetaIndex = target - this.vocabulary.getVocabularyLength();
+											thetaIndex = target - this.vocabulary.getStartPointer();
 											f = 0;
 											f += this._models[contextIndex].multiply(this._negTheta[thetaIndex]);
 											if (f > this.expTable.getMaxX()) g = (label - 1) * this.learnRate;
