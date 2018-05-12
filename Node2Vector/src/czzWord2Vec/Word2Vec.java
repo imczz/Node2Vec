@@ -361,8 +361,7 @@ public class Word2Vec<T> {
 												label =	0;					//negative¸ö¸ºÀý
 											}
 											thetaIndex = target - this.vocabulary.getStartPointer();
-											f = 0;
-											f += this._models[contextIndex].multiply(this._negTheta[thetaIndex]);
+											f = this._models[contextIndex].multiply(this._negTheta[thetaIndex]);
 											if (f > this.expTable.getMaxX()) g = (label - 1) * this.learnRate;
 											else if (f < -this.expTable.getMaxX()) g = (label - 0) * this.learnRate;
 											else g = (label - expTable.getSigmoid(f)) * this.learnRate;

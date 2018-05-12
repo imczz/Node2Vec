@@ -78,7 +78,7 @@ public class ExpTable {
 	public float getSigmoid(float x) {
 		float ret = -1;
 		if(x > this._maxX) ret = 1;
-		else if(x < this._maxX) ret = -1;
+		else if(x < -this._maxX) ret = -1;
 		else ret = this._table[(int) ((x + this._maxX) * (this._tableSize / this._maxX / 2))];
 		return ret;
 	}
