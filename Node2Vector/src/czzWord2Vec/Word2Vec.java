@@ -291,7 +291,8 @@ public class Word2Vec<T> {
 	public void startTrainning() {
 		if(this.initialized) {				//经过初始化
 			int localIteratorNumber = 1;			//当前迭代次数
-			int c;									//[1, windowSize]的随机窗口大小，使词语之间关系更为密切
+			int c;
+			int randomWindow;									//[1, windowSize]的随机窗口大小，使词语之间关系更为密切
 			Random rand = new Random();
 			HWord<T> word;					//中心词
 			int wordIndex;					//中心词在词典中的索引号
@@ -305,7 +306,7 @@ public class Word2Vec<T> {
 				for(int sentenceIndex = 0; sentenceIndex < this.passags.getSentenceCount(); sentenceIndex++) {
 					T[] sentence = this.passags.getSentence(sentenceIndex);
 					for(int sentence_position = 0; sentence_position < sentence.length; sentence_position++) {
-						c = Math.max((rand.nextInt() + 11) % this.windowSize, 1);		//[1, windowSize]的随机窗口大小
+						randomWindow = (rand.nextInt() + 11) % this.windowSize;		//randomWindow = [0, windowSize - 1],随机窗口大小windowSize - randomWindow = [1, windowSize]
 						wordIndex = this.vocabulary.getWordIndex(sentence[sentence_position]);
 						if(wordIndex < this.vocabulary.getStartPointer()) continue;				//当前词被过滤
 						wordIndex -= this.vocabulary.getStartPointer();		//因为有单词被过滤，所以model,theta等数组索引改变位置
@@ -316,10 +317,10 @@ public class Word2Vec<T> {
 							//TODO
 						}//if(this.modelType == ModelType.CBOW)
 						else if(this.modelType == ModelType.Skip_gram) {
-							for (int i = c; i < this.windowSize * 2 + 1 - c; i++) {			//遍历当前词的上下文
+							for (int i = randomWindow; i < this.windowSize * 2 + 1 - randomWindow; i++) {			//遍历当前词的上下文
 								if (i != this.windowSize)					//是当前词的上下文，而不是当前词
 								{
-									c =	sentence_position -	this.windowSize + i;
+									c =	sentence_position -	this.windowSize + i;			//c={sp-w,sp-w+1, ..., sp-1, sp+1, ..., sp+w-1, sp+w}
 									if (c <	0) continue;
 									if (c >= sentence.length) continue;			//for (int i = c; i < this.windowSize * 2 + 1 - c; i++)
 									contextWord = sentence[c];

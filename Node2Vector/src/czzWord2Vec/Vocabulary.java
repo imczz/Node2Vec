@@ -220,7 +220,7 @@ public class Vocabulary<T> implements IVocabulary{
 			HWord<T> parentNode;
 			ArrayList<HWord<T> > nodeList = new ArrayList<HWord<T> >();				//Huffman树中间节点，n-1个
 			HashMap<Integer, Integer> parentMap = new HashMap<Integer, Integer>();		//记录某个节点的父节点
-			int vLength = this.getVocabularyLength();						//词典长度
+			int vLength = this.getVocabularyFullSize();						//词典长度
 			min1 = _vocabulary.get(_startPointer + 0);
 			min2 = _vocabulary.get(_startPointer + 1);
 			min1.code.clear();					//清空编码
@@ -277,7 +277,7 @@ public class Vocabulary<T> implements IVocabulary{
 					leafNode.point.add(0, parentIndex - vLength);
 					parentIndex = parentMap.get(parentIndex);			//父节点的父节点
 				}
-				leafNode.point.add(0, vLength - 2);
+				leafNode.point.add(0, this.getVocabularyLength() - 2);
 			}
 			nodeList.clear();
 			parentMap.clear();

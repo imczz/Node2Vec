@@ -37,10 +37,10 @@ public class VocabularyHuffmanTest {
 		V.sortVocabulary();
 		assertTrue(V.getHuffmanCode());
 		/*
-		              25
-		       15(1)     10(0)
-		    8(1) f7(0)  c5(1) 5(0)
-		 d4(1) e4(1)       b3(1) a2(0)
+		                25()(4)
+		        15(1)(3)       10(0)(2)
+		    8(1)(1) f7(0)   c5(1)   5(0)(0)
+		 d4(1) e4(1)              b3(1) a2(0)
 		 */
 		HWord<String> a = V.getWord("a");//000
 		HWord<String> b = V.getWord("b");//001
@@ -54,6 +54,12 @@ public class VocabularyHuffmanTest {
 		assertArrayEquals(new Byte[]{1, 1, 0}, d.code.toArray());
 		assertArrayEquals(new Byte[]{1, 1, 1}, e.code.toArray());
 		assertArrayEquals(new Byte[]{1, 0}, f.code.toArray());
+		assertArrayEquals(new Integer[]{4, 2, 0} ,a.point.toArray());
+		assertArrayEquals(new Integer[]{4, 2, 0} ,b.point.toArray());
+		assertArrayEquals(new Integer[]{4, 2} ,c.point.toArray());
+		assertArrayEquals(new Integer[]{4, 3, 1} ,d.point.toArray());
+		assertArrayEquals(new Integer[]{4, 3, 1} ,e.point.toArray());
+		assertArrayEquals(new Integer[]{4, 3} ,f.point.toArray());
 	}
 
 }
