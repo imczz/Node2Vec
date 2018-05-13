@@ -326,14 +326,14 @@ public class Word2Vec<T> {
 									contextWord = sentence[c];
 									contextIndex = this.vocabulary.getWordIndex(contextWord);
 									if(contextIndex == -1) continue;			//for (int i = c; i < this.windowSize * 2 + 1 - c; i++)
-									if(contextIndex < this.vocabulary.getStartPointer()) continue;			//当前词被过滤掉了
 									contextIndex -= this.vocabulary.getStartPointer();		//因为有单词被过滤，所以model,theta等数组索引改变位置
+									if(contextIndex < 0) continue;			//当前词被过滤掉了
 									e = new CVector(this.dimensions);		//e=0
 									// HIERARCHICAL	SOFTMAX
 									if (this.trainMethod == TrainMethod.HS || this.trainMethod == TrainMethod.BOTH)
 										for	(int l = 0;	l <	word.code.size(); l++)		//从huffman路径分层SoftMax
 										{
-											thetaIndex = word.point.get(l) - this.vocabulary.getStartPointer();
+											thetaIndex = word.point.get(l);
 											// Propagate hidden -> output
 											f = this._models[contextIndex].multiply(this._huffmanTheta[thetaIndex]);	//f = x * theta;
 											if (f <= -this.expTable.getMaxX()) continue;

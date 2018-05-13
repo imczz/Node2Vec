@@ -44,8 +44,8 @@ public class ExpTable {
 	 * S形的sigmoid函数
 	 * @param x 自变量
 	 * @return 函数值*/
-	public float sigmoid(float x) {
-		float t = (float) Math.exp(x);
+	public static float sigmoid(float x) {
+		float t = (float) Math.exp(x);					//t值过大会溢出，返回NaN（Not a Number）
 		return t / (t + 1);							//或许可以让除数与被除数大小接近
 		//return (1/(1 + (float)Math.exp(-x)));			//Sigmoid(x) = 1/(1 + e ^-x)
 	}
@@ -68,7 +68,7 @@ public class ExpTable {
 		float x;
 		for(int i = 0; i <= this._tableSize; i++) {
 			x = (2.0f * i / this._tableSize - 1) * this._maxX;			//[-maxX, maxX]分成tableSize份
-			_table[i] = this.sigmoid(x);
+			_table[i] = ExpTable.sigmoid(x);
 		}
 	}
 	
@@ -78,7 +78,7 @@ public class ExpTable {
 	public float getSigmoid(float x) {
 		float ret = -1;
 		if(x > this._maxX) ret = 1;
-		else if(x < -this._maxX) ret = -1;
+		else if(x < -this._maxX) ret = 0;
 		else ret = this._table[(int) ((x + this._maxX) * (this._tableSize / this._maxX / 2))];
 		return ret;
 	}
