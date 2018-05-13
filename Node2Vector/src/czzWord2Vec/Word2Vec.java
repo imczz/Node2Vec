@@ -294,13 +294,13 @@ public class Word2Vec<T> {
 			int c;
 			int randomWindow;									//[1, windowSize]的随机窗口大小，使词语之间关系更为密切
 			Random rand = new Random();
-			HWord<T> word;					//中心词
+			HWord<T> contextX;					//中心词， 中心词的上下文
 			int wordIndex;					//中心词在词典中的索引号
 			T contextWord;							//上下文
 			int contextIndex;					//上下文在词典中的索引号
 			int thetaIndex;						//西塔索引号
 			int target, label;
-			IVector e;
+			IVector ehs, ens;					//hs与ns的e
 			float f, g;
 			for(localIteratorNumber = 1; localIteratorNumber <= this.iteratorNumber; localIteratorNumber++) { //迭代次数
 				for(int sentenceIndex = 0; sentenceIndex < this.passags.getSentenceCount(); sentenceIndex++) {
@@ -310,7 +310,7 @@ public class Word2Vec<T> {
 						wordIndex = this.vocabulary.getWordIndex(sentence[sentence_position]);
 						if(wordIndex < this.vocabulary.getStartPointer()) continue;				//当前词被过滤
 						wordIndex -= this.vocabulary.getStartPointer();		//因为有单词被过滤，所以model,theta等数组索引改变位置
-						word = this.vocabulary.getWord(sentence[sentence_position]);
+						//word = this.vocabulary.getWord(sentence[sentence_position]);
 						this.learnRate *= 0.999f;							//减小学习率
 						if (this.learnRate < this.startLearnRate * 0.0001f) this.learnRate = this.startLearnRate * 0.0001f;
 						if(this.modelType == ModelType.CBOW) {
@@ -325,27 +325,31 @@ public class Word2Vec<T> {
 									if (c >= sentence.length) continue;			//for (int i = c; i < this.windowSize * 2 + 1 - c; i++)
 									contextWord = sentence[c];
 									contextIndex = this.vocabulary.getWordIndex(contextWord);
+									contextX = this.vocabulary.getWord(contextWord);
 									if(contextIndex == -1) continue;			//for (int i = c; i < this.windowSize * 2 + 1 - c; i++)
 									contextIndex -= this.vocabulary.getStartPointer();		//因为有单词被过滤，所以model,theta等数组索引改变位置
 									if(contextIndex < 0) continue;			//当前词被过滤掉了
-									e = new CVector(this.dimensions);		//e=0
+									ehs = new CVector(this.dimensions);		//e=0
+									ens = new CVector(this.dimensions);		//e=0
 									// HIERARCHICAL	SOFTMAX
-									if (this.trainMethod == TrainMethod.HS || this.trainMethod == TrainMethod.BOTH)
-										for	(int l = 0;	l <	word.code.size(); l++)		//从huffman路径分层SoftMax
+									if (this.trainMethod == TrainMethod.HS || this.trainMethod == TrainMethod.BOTH) {
+										for	(int l = 0;	l <	contextX.code.size(); l++)		//从huffman路径分层SoftMax
 										{
-											thetaIndex = word.point.get(l);
+											thetaIndex = contextX.point.get(l);
 											// Propagate hidden -> output
-											f = this._models[contextIndex].multiply(this._huffmanTheta[thetaIndex]);	//f = x * theta;
+											f = this._models[wordIndex].multiply(this._huffmanTheta[thetaIndex]);	//f = x * theta;
 											if (f <= -this.expTable.getMaxX()) continue;
 											else if (f >= this.expTable.getMaxX()) continue;
 											else f = expTable.getSigmoid(f);								//sigmoid函数
 											// 'g' is the	gradient multiplied	by the learning	rate
-											g = (1 - word.code.get(l) - f) * this.learnRate;				//偏导数乘学习率
+											g = (1 - contextX.code.get(l) - f) * this.learnRate;				//偏导数乘学习率
 											// Propagate errors output ->	hidden
-											e.add(this._huffmanTheta[thetaIndex].new_Multi(g));				//e += g * theta
+											ehs.add(this._huffmanTheta[thetaIndex].new_Multi(g));				//e += g * theta
 											// Learn weights hidden -> output
-											this._huffmanTheta[thetaIndex].add(this._models[contextIndex].new_Multi(g));
+											this._huffmanTheta[thetaIndex].add(this._models[wordIndex].new_Multi(g));
 										}
+										this._models[wordIndex].add(ehs);				// Learn weights input -> hidden
+									}
 									// NEGATIVE	SAMPLING
 									if (this.trainMethod == TrainMethod.NS || this.trainMethod == TrainMethod.BOTH) {
 										for (int d = 0; d < this.negative + 1; d++)
@@ -366,12 +370,11 @@ public class Word2Vec<T> {
 											if (f > this.expTable.getMaxX()) g = (label - 1) * this.learnRate;
 											else if (f < -this.expTable.getMaxX()) g = (label - 0) * this.learnRate;
 											else g = (label - expTable.getSigmoid(f)) * this.learnRate;
-											e.add(this._negTheta[thetaIndex].new_Multi(g));				//e += g * theta
+											ens.add(this._negTheta[thetaIndex].new_Multi(g));				//e += g * theta
 											this._negTheta[thetaIndex].add(this._models[contextIndex].new_Multi(g));
 										}
+										this._models[contextIndex].add(ens);// Learn weights input -> hidden
 									}
-									// Learn weights input -> hidden
-									this._models[contextIndex].add(e);
 								}//if (i != this.windowSize)
 							}//for (int i = c; i < this.windowSize * 2 + 1 - c; i++)	
 						}//if(this.modelType == ModelType.Skip_gram)
