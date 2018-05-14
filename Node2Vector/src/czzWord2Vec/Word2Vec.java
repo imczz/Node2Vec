@@ -294,12 +294,10 @@ public class Word2Vec<T> {
 			int c;
 			int randomWindow;									//[1, windowSize]的随机窗口大小，使词语之间关系更为密切
 			Random rand = new Random();
-			HWord<T> contextX;					//中心词， 中心词的上下文
-			int wordIndex;					//中心词在词典中的索引号
-			T contextWord;							//上下文
-			int contextIndex;					//上下文在词典中的索引号
-			int thetaIndex;						//西塔索引号
-			int target, label;
+			HWord<T> contextX;								//中心词的上下文
+			int wordIndex, contextIndex, thetaIndex;		//中心词,上下文在词典中的索引号;西塔索引号
+			T contextWord;									//上下文
+			int label;								//负采样的Lω(u) u∈ω∪Neg(ω)
 			IVector ehs, ens;					//hs与ns的e
 			float f, g;
 			for(localIteratorNumber = 1; localIteratorNumber <= this.iteratorNumber; localIteratorNumber++) { //迭代次数
@@ -311,7 +309,7 @@ public class Word2Vec<T> {
 						if(wordIndex < this.vocabulary.getStartPointer()) continue;				//当前词被过滤
 						wordIndex -= this.vocabulary.getStartPointer();		//因为有单词被过滤，所以model,theta等数组索引改变位置
 						//word = this.vocabulary.getWord(sentence[sentence_position]);
-						this.learnRate *= 0.999f;							//减小学习率
+						this.learnRate *= 0.9999f;							//减小学习率
 						if (this.learnRate < this.startLearnRate * 0.0001f) this.learnRate = this.startLearnRate * 0.0001f;
 						if(this.modelType == ModelType.CBOW) {
 							//TODO
@@ -337,9 +335,9 @@ public class Word2Vec<T> {
 										{
 											thetaIndex = contextX.point.get(l);
 											// Propagate hidden -> output
-											f = this._models[wordIndex].multiply(this._huffmanTheta[thetaIndex]);	//f = x * theta;
-											if (f <= -this.expTable.getMaxX()) continue;
-											else if (f >= this.expTable.getMaxX()) continue;
+											f = this._models[wordIndex].multiply(this._huffmanTheta[thetaIndex]);	//f = v(ω) * theta(u,j-1); u∈context(ω)
+											if (f < -this.expTable.getMaxX()) continue;
+											else if (f > this.expTable.getMaxX()) continue;
 											else f = expTable.getSigmoid(f);								//sigmoid函数
 											// 'g' is the	gradient multiplied	by the learning	rate
 											g = (1 - contextX.code.get(l) - f) * this.learnRate;				//偏导数乘学习率
@@ -356,16 +354,15 @@ public class Word2Vec<T> {
 										{
 											if (d == 0)
 											{
-												target = wordIndex;
+												thetaIndex = wordIndex;
 												label =	1;					//1个正例
 											}
 											else
 											{
-												target = this.vocabulary.negSamplingWord();
-												if (target == wordIndex) continue;
+												thetaIndex = this.vocabulary.negSamplingWord();
+												if (thetaIndex == wordIndex) continue;
 												label =	0;					//negative个负例
 											}
-											thetaIndex = target - this.vocabulary.getStartPointer();
 											f = this._models[contextIndex].multiply(this._negTheta[thetaIndex]);
 											if (f > this.expTable.getMaxX()) g = (label - 1) * this.learnRate;
 											else if (f < -this.expTable.getMaxX()) g = (label - 0) * this.learnRate;
