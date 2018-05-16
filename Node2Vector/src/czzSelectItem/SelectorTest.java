@@ -94,4 +94,24 @@ public class SelectorTest {
 			assertEquals(ap[i], cp[i], delta);
 		}
 	}
+	
+	@Test
+	public void testKInN() {
+		int n = 20;
+		int k = 7;
+		int m = 1000;
+		int i, j;
+		int[] sum = new int[n];
+		for(i = 0; i < n; i++) {
+			sum[i] = 0;
+		}
+		int[] result;
+		for(i = 0; i < m; i++) {
+			result = Selector.kInN(n, k);
+			for(j = 0; j < k; j++) sum[result[j]]++;
+		}
+		for(i = 0; i < n; i++) {
+			assertEquals(k * 1.0 / n, sum[i] * 1.0 / m,  5e-2);
+		}
+	}
 }

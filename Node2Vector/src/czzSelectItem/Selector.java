@@ -101,4 +101,29 @@ public final class Selector {
 		return ret;
 	}
 		
+	/**
+	 * 在0——n-1这n个编号中选择k个
+	 * @param n 总数
+	 * @param k 选择数
+	 * @return 长度为k的选择编号数组*/
+	public static int[] kInN(int n, int k) {
+		int [] arr = null;
+		int[] selectArray = null;
+		if(n > 0 && k > 0 && n > k) {
+			int i;
+			selectArray = new int[k];
+			arr = new int[n];
+			Random rand = new Random();
+			int index;
+			for(i = 0; i < n; i++) {
+				arr[i] = i;
+			}
+			for(i = 0; i < k; i++) {
+				index = rand.nextInt(n - i) + i;
+				selectArray[i] = arr[index];
+				arr[index] = arr[i];
+			}
+		}
+		return selectArray;
+	}
 }

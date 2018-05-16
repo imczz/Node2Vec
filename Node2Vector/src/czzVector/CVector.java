@@ -22,7 +22,7 @@ public class CVector implements IVector{
 	 * 构造方法，初始化一个长度为length的向量，初始化为0
 	 * @param length 初始化长度*/
 	public CVector(int size) {
-		_vector = new float[size];				//ArrayList，初始化容量的构造方法
+		_vector = new float[size];
 		for(int i = 0; i < _vector.length; i++) {
 			_vector[i] = 0f;								//初始化为0
 		}
@@ -155,6 +155,35 @@ public class CVector implements IVector{
 		}
 		str.append("]");
 		return str.toString();
+	}
+
+	/**
+	 * @param v另一个向量
+	 * @return 此向量与v向量的的欧式距离*/
+	@Override
+	public float distance(IVector v) {
+		float ret = -1;
+		if(this.getSize() == v.getSize()) {
+			ret = 0;
+			for(int i = 0; i < this.getSize(); i++) {
+				ret += Math.pow(this._vector[i] - v.getVector()[i], 2);				//分量平方和
+			}
+			ret = (float) Math.sqrt(ret);
+		}
+		return ret;
+	}
+
+	/**
+	 * 复制一个向量，深度复制
+	 * @param v 另一个向量*/
+	@Override
+	public void copy(IVector v) {
+		if(v.getSize() > 0) {
+			this._vector = new float[v.getSize()];
+			for(int i = 0; i < this._vector.length; i++) {
+				this._vector[i] = v.getVector()[i];
+			}
+		}
 	}
 
 

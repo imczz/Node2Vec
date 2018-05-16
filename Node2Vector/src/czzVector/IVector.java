@@ -6,9 +6,12 @@ package czzVector;
 public interface IVector {
 
 	/**
+	 * 复制一个新的向量*/
+	public void copy(IVector v);
+	
+	/**
 	 * 新申请一个向量，长度为size*/
 	public void resize(int size);
-	
 	
 	/**
 	 * 新申请一个向量，长度为size，每个都初始化为seed*/
@@ -49,4 +52,8 @@ public interface IVector {
 	/**
 	 * 向量对应分量相加（返回一个新的向量）*/
 	public IVector new_Add(IVector v2);
+	
+	/**
+	 * 向量之间的欧式距离*/
+	public float distance(IVector v);
 }

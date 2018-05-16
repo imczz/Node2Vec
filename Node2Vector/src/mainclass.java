@@ -1,12 +1,17 @@
 import java.io.IOException;
 import java.util.ArrayList;
 
+import czzClusterAnalysis.Cluster;
+import czzClusterAnalysis.ClusterNode;
+import czzClusterAnalysis.KMeans;
 import czzNode2Vec.Node2Vec;
 import czzVector.IVector;
 import czzWord2Vec.Word2Vec;
 import czzWord2Vec.Word2Vec.ModelType;
 import czzWord2Vec.Word2Vec.TrainMethod;
 
+/**
+ * 程序入口方法所在*/
 public class mainclass {
 
 	public static void main(String[] args) {
@@ -19,7 +24,7 @@ public class mainclass {
 		
 		//Word2Vec<Integer> w2v = new Word2Vec<Integer>(ModelType.Skip_gram, TrainMethod.HS, 0, 128, 5, 0.025f, 5, 3, 1);
 		//Word2Vec<Integer> w2v = new Word2Vec<Integer>(ModelType.Skip_gram, TrainMethod.NS, 5, 128, 5, 0.05f, 5, 5, 1);
-		Word2Vec<Integer> w2v = new Word2Vec<Integer>(ModelType.Skip_gram, TrainMethod.BOTH, 5, 128, 5, 0.025f, 5, 5, 1);
+		Word2Vec<Integer> w2v = new Word2Vec<Integer>(ModelType.Skip_gram, TrainMethod.BOTH, 5, 128, 5, 0.025f, 5, 3, 1);
 		
 		//Word2Vec<Integer> w2v = new Word2Vec<Integer>(ModelType.CBOW, TrainMethod.HS, 0, 128, 5, 0.025f, 5, 5, 1);
 		//Word2Vec<Integer> w2v = new Word2Vec<Integer>(ModelType.CBOW, TrainMethod.NS, 5, 128, 5, 0.05f, 5, 5, 1);
@@ -35,5 +40,12 @@ public class mainclass {
 
 			e.printStackTrace();
 		}
+		Cluster<Integer> cluster = new KMeans<Integer>();
+		for(int i = 0; i < models.length; i++) {
+			cluster.addNode(i, models[i]);
+		}
+		cluster.runCluster(3);
+		ArrayList<ClusterNode<Integer>> clusterResult= cluster.getNodes();
+		System.out.println(clusterResult.size());
 	}
 }
