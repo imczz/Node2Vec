@@ -80,7 +80,20 @@ public class Matrix {
 						}
 					}
 				}
+				ret = true;
 			}
+		}
+		return ret;
+	}
+	
+	/**
+	 * 复制一个m矩阵
+	 * @param m 被复制的矩阵*/
+	public boolean copy(Matrix m) {
+		boolean ret = false;
+		if(m.getRow() > 0 && m.getColumn() > 0) {
+			this.load(m.getMatrix());
+			ret = true;
 		}
 		return ret;
 	}
@@ -164,6 +177,22 @@ public class Matrix {
 	/**
 	 * 矩阵数乘，每个位置乘f
 	 * @param f 一个浮点数*/
+	public static Matrix multiply(Matrix m, float f) {
+		Matrix ret = null;
+		if(m.row > 0 && m.column > 0) {
+			ret = new Matrix(m.row, m.column);
+			for(int i = 0; i < m.row; i++) {
+				for(int j = 0; j < m.column; j++) {
+					ret.set(i, j, m.get(i, j) * f);
+				}
+			}
+		}
+		return ret;
+	}
+	
+	/**
+	 * 矩阵数乘，每个位置乘f
+	 * @param f 一个浮点数*/
 	public void multiply(float f) {
 		for(int i = 0; i < this.row; i++) {
 			for(int j = 0; j < this.column; j++) {
@@ -202,24 +231,37 @@ public class Matrix {
 	}
 	
 	/**
-	 * 将矩阵m复制r * c次，新矩阵相当于r行c列个m*/
-	public Matrix repeat(Matrix m, int row, int column) {
+	 * 将矩阵m复制r * c次，新矩阵相当于r行c列个m
+	 * @param m 被复制矩阵
+	 * @param rowTimes 行复制次数
+	 * @param columnTimes 列复制次数
+	 * @return 复制结果*/
+	public static Matrix repeat(Matrix m, int rowTimes, int columnTimes) {
 		Matrix ret = null;
 		int mr = m.getRow();
 		int mc = m.getColumn();
-		if(mr > 0 && mc > 0 && row > 0 && column > 0) {
-			ret = new Matrix(row * mr, column * mc);
+		if(mr > 0 && mc > 0 && rowTimes > 0 && columnTimes > 0) {
+			ret = new Matrix(rowTimes * mr, columnTimes * mc);
 			for(int a = 0; a < mr; a++) {
 				for(int b = 0; b < mc; b++) {
-					for(int c = 0; c < row; c++) {
-						for(int d = 0; d < column; d++) {
-							ret.set(c * mc + a, d * mr + b, m.get(a, b));
+					for(int c = 0; c < rowTimes; c++) {
+						for(int d = 0; d < columnTimes; d++) {
+							ret.set(c * mr + a, d * mc + b, m.get(a, b));
 						}
 					}
 				}
 			}
 		}
 		return ret;
+	}
+	
+	/**
+	 * 将此矩阵复制r * c次，新矩阵相当于r行c列个此矩阵
+	 * @param rowTimes 行复制次数
+	 * @param columnTimes 列复制次数
+	 * @return 复制结果*/
+	public Matrix repeat(int rowTimes, int columnTimes) {
+		return Matrix.repeat(this, rowTimes, columnTimes);
 	}
 	
 	/**
@@ -235,13 +277,13 @@ public class Matrix {
 	/**
 	 * 矩阵的列的平均数
 	 * @return 1行c列矩阵，c个分量的向量，每个分量是一列的平均数*/
-	public Matrix means() {
+	public Matrix mean() {
 		Matrix ret = null;
 		if(this.row > 0 && this.column > 0) {
 			ret = new Matrix(1, this.column, 0);
 			for(int i = 0; i < this.row; i++) {
 				for(int j= 0; j < this.column; j++) {
-					ret.matrix[1][j] += this.matrix[i][j];
+					ret.matrix[0][j] += this.matrix[i][j];
 				}
 			}
 			ret.multiply(1.0f / this.row);
@@ -333,21 +375,179 @@ public class Matrix {
 	/**
 	 * 方阵的伴随矩阵*/
 	public Matrix adjoint() {
-		//TODO
-		return null;
+		Matrix ret = null;
+		if(this.row == this.column && this.row > 0) {
+			ret = new Matrix(this.row, this.column);
+			int symbol;
+			for(int i = 0; i < this.row; i++) {
+				if(i % 2 == 0) symbol = 1;
+				else symbol = -1;
+				for(int j= 0; j < this.column; j++) {
+					ret.matrix[j][i] = symbol * this.subIJ(i, j).determinant();
+					symbol = -symbol;
+				}
+			}
+		}
+		return ret;
 	}
 	
 	/**
-	 * 方阵的逆矩阵*/
+	 * 伴随矩阵除行列式求逆矩阵
+	 * @return 此矩阵的逆矩阵*/
+	private Matrix defineInv() {
+		Matrix ret = null;
+		if(this.row == this.column && this.row > 0) {
+			float det = this.determinant();
+			if(det != 0) {						//矩阵可逆
+				ret = this.adjoint();
+				ret.multiply(1 / this.determinant());
+			}
+			else ret = null;
+		}
+		return ret;
+	}
+	
+	/**
+	 * 方阵的逆矩阵
+	 * @return 此矩阵的逆矩阵*/
 	public Matrix inverse() {
-		//TODO
-		return null;
+		return defineInv();
 	}
 	
 	/**
-	 * 协方差矩阵*/
+	 * 协方差矩阵
+	 * @param m 矩阵
+	 * @return m矩阵的协方差矩阵*/
 	public static Matrix cov(Matrix m) {
-		//TODO
-		return null;
+		int i, j, row, column;
+		Matrix ret = null;
+		row = m.getRow();
+		column = m.getColumn();
+		if(row > 0 && column > 0) {
+			Matrix mean = m.mean();											//每列均值
+			Matrix s = new Matrix(row, column);
+			for(i = 0; i < row; i++) {
+				for(j = 0; j < column; j++) {
+					s.set(i, j, m.get(i, j) - mean.get(0, j));					//对应减去每列的均值
+				}
+			}
+			ret = new Matrix(column, column, 0);
+			for(i = 0; i < column; i++) {
+				for(j = 0; j < column; j++) {
+					for(int k = 0; k < row; k++) {
+						ret.getMatrix()[i][j] += s.get(k, i) * s.get(k, j);		//乘转置
+					}
+					ret.getMatrix()[i][j] /= row - 1;							//除n-1
+				}
+			}
+		}
+		return ret;
+	}
+	
+	/**
+	 * 协方差矩阵
+	 * @return 此矩阵的协方差矩阵*/
+	public Matrix cov() {
+		return Matrix.cov(this);
+	}
+	
+	/**
+	 * @return 矩阵存在且为方阵*/
+	public boolean isSquare() {
+		boolean ret = (this.row == this.column && this.row > 0);
+		return ret;
+	}
+	
+	/**
+	 * QR分解，Q为正交矩阵，R为非奇异上三角矩阵，A=QR
+	 * @return 数组0为Q，1为R*/
+	public static Matrix[] QR(Matrix A) {			//Gram–Schmidt正交化方式
+		Matrix[] ret = null;
+		if(A.isSquare()) {	//QR分解的A并不一定是方阵，也可能是m行n列，此时Q为m*n,R为n*n
+			ret = new Matrix[2];
+			//Matrix Q = new Matrix(A.getRow(), A.getColumn());				//Q
+			//Matrix R = new Matrix(A.getColumn(), A.getColumn());			//R
+			Matrix B = new Matrix();										//beta
+			Matrix T = new Matrix(A.getColumn(), A.getColumn(), 0);			//T			Q=AT
+			B.load(A.getMatrix());							//b1 = a1;
+			float numerator, denominator;
+			float[] l2 = new float[A.getColumn()];			//beta的模、二范数
+			int i, j, k;
+			for(i = 0; i < A.getColumn(); i++) {			//先循环列
+				l2[i] = 0;
+				for(j = 0; j <= i; j++) {					//行
+					if(i == j) T.set(i, j, 1);			//对角线
+					else if(i < j) continue;			//下三角，不会执行此分支
+					else if(i > j) {					//上三角
+						numerator = 0;
+						denominator = 0;
+						for(k = 0; k < A.getColumn(); k++) {
+							numerator += A.get(k, i) * B.get(k, j);					//alpha(i)*beta(j)
+							denominator += B.get(k, j) * B.get(k, j);				//beta(j)*beta(j)
+						}
+						T.set(j, i, -numerator / denominator);					//分量前的参数
+						for(k = 0; k < A.getRow(); k++) {
+							B.getMatrix()[k][i] += T.get(j, i) * B.get(k, j);	//beta(i) = alpha(i) - sum(k=1,j-1)((alpha(i)beta(k)/beta(k)beta(k))beta(k))
+						}
+					}
+				}
+				for(k = 0; k < A.getColumn(); k++) {
+					l2[i] += Math.pow(B.get(k, i), 2);
+				}
+				l2[i] = (float) Math.sqrt(l2[i]);
+			}
+			for(i = 0; i < A.getColumn(); i++) {					//每一列都是一个向量
+				for(j = 0; j < A.getRow(); j++) {					//向量的分量
+					B.getMatrix()[j][i] /= l2[i];				//单位化
+					if(i <= j) T.getMatrix()[j][i] /=l2[i];		//对应的施密特正交化参数
+				}
+			}
+			ret[0] = B;								//Q为beta列单位化
+			//ret[1] = T.inverse();					//R为T的逆矩阵
+			ret[1] = B.transposition().multiply(A);		//R=Q^-1 * A(Q^T * A)
+		}
+		return ret;
+	}
+	
+	public static Matrix diag(Matrix m) {
+		Matrix ret = null;
+		if(m.isSquare()) {
+			Matrix[] qr;
+			boolean flag = true;
+			qr = Matrix.QR(m);
+			while(flag) {
+				ret = qr[1].multiply(qr[0]);								//A(k+1)=R(k)Q(k)
+				flag = false;
+ 				total : for(int i = 0; i < ret.getRow(); i++) {				//对角矩阵
+					for(int j = 0; j < ret.getRow(); j++) {
+						if(i != j && Math.abs(ret.get(i, j)) > 1e-5) {
+							flag = true;
+							break total;
+						}
+					}
+				}
+				if(flag) qr=Matrix.QR(ret);
+			}
+			
+		}
+		return ret;
+	}
+	
+	public String toString() {
+		StringBuffer str = new StringBuffer();
+		str.append("[");
+		for(int i = 0; i < this.row; i++) {
+			if(i != 0) str.append(", ");
+			str.append("[");
+			for(int j = 0; j < this.column; j++) {
+				if(j != 0) str.append(", ");
+				str.append("[");
+				str.append(this.matrix[i][j]);
+				str.append("]");
+			}
+			str.append("]");
+		}
+		str.append("]");
+		return this.matrix.toString();
 	}
 }
