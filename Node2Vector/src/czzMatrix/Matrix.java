@@ -496,11 +496,13 @@ public class Matrix {
 				}
 				l2[i] = (float) Math.sqrt(l2[i]);
 			}
+			int symbol = -1;
 			for(i = 0; i < A.getColumn(); i++) {					//每一列都是一个向量
 				for(j = 0; j < A.getRow(); j++) {					//向量的分量
-					B.getMatrix()[j][i] /= l2[i];				//单位化
+					B.getMatrix()[j][i] /= (symbol * l2[i]);				//单位化
 					if(i <= j) T.getMatrix()[j][i] /=l2[i];		//对应的施密特正交化参数
 				}
+				symbol = -symbol;
 			}
 			ret[0] = B;								//Q为beta列单位化
 			//ret[1] = T.inverse();					//R为T的逆矩阵
@@ -511,24 +513,28 @@ public class Matrix {
 	
 	public static Matrix diag(Matrix m) {
 		Matrix ret = null;
+		//int n = 0;
+		Matrix mk = m;
 		if(m.isSquare()) {
 			Matrix[] qr;
 			boolean flag = true;
-			qr = Matrix.QR(m);
 			while(flag) {
-				ret = qr[1].multiply(qr[0]);								//A(k+1)=R(k)Q(k)
+				Matrix mk1;
+				qr = Matrix.QR(mk);									//A(k) = Q(k) * R(k)
+				mk1 = qr[1].multiply(qr[0]);							//A(k+1)=R(k)Q(k)								
 				flag = false;
- 				total : for(int i = 0; i < ret.getRow(); i++) {				//对角矩阵
-					for(int j = 0; j < ret.getRow(); j++) {
-						if(i != j && Math.abs(ret.get(i, j)) > 1e-5) {
-							flag = true;
+ 				total : for(int i = 0; i < mk1.getRow(); i++) {				//对角矩阵
+					for(int j = 0; j < mk1.getRow(); j++) {
+						if(i > j && Math.abs(mk1.get(i, j)) > 1e-5) {		//下三角为0
+							flag = true;					//继续迭代
 							break total;
 						}
 					}
 				}
-				if(flag) qr=Matrix.QR(ret);
+				//n++;
+				mk = mk1;										//继续迭代
 			}
-			
+			ret = mk;
 		}
 		return ret;
 	}
@@ -541,13 +547,11 @@ public class Matrix {
 			str.append("[");
 			for(int j = 0; j < this.column; j++) {
 				if(j != 0) str.append(", ");
-				str.append("[");
 				str.append(this.matrix[i][j]);
-				str.append("]");
 			}
 			str.append("]");
 		}
 		str.append("]");
-		return this.matrix.toString();
+		return str.toString();
 	}
 }

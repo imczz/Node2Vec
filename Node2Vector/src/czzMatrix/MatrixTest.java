@@ -102,8 +102,8 @@ public class MatrixTest {
 		Matrix mat = new Matrix();
 		mat.load(m);
 		Matrix[] QR = Matrix.QR(mat);
-		//float[][] mtestQ = {{-0.0995f, 0.5687f, -0.8165f}, {-0.5970f, -0.6906f, -0.4082f}, {-0.7960f, 0.4468f, 0.4082f}};
-		//float[][] mtestR = {{-10.0499f, -10.3484f, -8.2588f}, {0, 1.7061f, 2.0717f}, {0, 0, -1.2247f}};
+		float[][] mtestQ = {{-0.0995f, 0.5687f, -0.8165f}, {-0.5970f, -0.6906f, -0.4082f}, {-0.7960f, 0.4468f, 0.4082f}};
+		float[][] mtestR = {{-10.0499f, -10.3484f, -8.2588f}, {0, 1.7061f, 2.0717f}, {0, 0, -1.2247f}};
 		Matrix matQR = Matrix.multiply(QR[0], QR[1]);
 		for(int i = 0; i < matQR.getRow(); i++) {
 			assertArrayEquals(m[i], matQR.getMatrix()[i], 1e-3f);			//m = Q * R
@@ -134,23 +134,34 @@ public class MatrixTest {
 				else assertEquals(0, E.get(i, j), 1e-4);				//0
 			}
 		}
-		/*										//与matlabQR分解结果不同，但是Q是正交矩阵，A=QR，也就是说QR分解不唯一
+		//与matlabQR分解结果，A=QR，Q的每一列是负正负正
 		for(int i = 0; i < QR[0].getRow(); i++) {
 			assertArrayEquals(mtestQ[i], QR[0].getMatrix()[i], 1e-3f);
 		}
 		for(int i = 0; i < QR[1].getRow(); i++) {
 			assertArrayEquals(mtestR[i], QR[1].getMatrix()[i], 1e-3f);
 		}
-		*/
+		
 	}
 	
 	@Test
 	public void testDiag() {
-		float[][] m = {{1, 2, 3}, {4, 5, 6}, {7, 8, 9}};
+		float[][] m = {{1, 2, 3}, {4, 4, 4}, {5, 6, 0}};
 		Matrix mat = new Matrix();
 		mat.load(m);
 		Matrix diag = Matrix.diag(mat);
-		float[] test = {16.1168f,-1.1168f, 0};
+		/*
+		 * V =
+			-0.3716   -0.7690   -0.4364
+			-0.6924    0.6391   -0.2182
+			-0.6185    0.0149    0.8729
+
+		   D =
+			9.7202         0         0
+			0   -0.7202         0
+			0         0   -4.0000
+		 * */
+		float[] test = {9.7202f, -4, -0.7202f};
 		for(int i = 0; i < diag.getRow(); i++) {
 			assertEquals(diag.get(i, i), test[i], 1e-4);
 		}
