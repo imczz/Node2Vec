@@ -6,26 +6,19 @@ package czzMatrix;
 public class Eigen {
 
 	/**
-	 * 特征值*/
-	public float eigenvalue;
+	 * 特征值，长度为l，l<n*/
+	public float[] eigenvalues;
 	
 	/**
-	 * 特征向量*/
-	public Matrix eigenvector;
+	 * 特征向量矩阵，每列是矩阵对应特征值的特征向量*/
+	public Matrix eigenvectors;
 	
 	/*================================方法 methods================================*/
 	
 	/**
 	 * 空构造方法*/
 	public Eigen() {
-		this.eigenvalue = 0;
-		this.eigenvector = null;
-	}
-	
-	/**
-	 * 构造方法*/
-	public Eigen(float eigenvalue, Matrix eigenvector) {
-		this.eigenvalue = 0;
-		this.eigenvector = null;
+		this.eigenvalues = null;
+		this.eigenvectors = null;
 	}
 }

@@ -1,23 +1,34 @@
 package czzMatrix;
 
 /**
- * 米发球矩阵特征值，特征向量*/
+ * 幂法求矩阵特征值，特征向量，需要最大特征值强占优，即绝对值最大，而不是多于一个重特征值*/
 public class PowerMethod {
 
+	/**
+	 * 待计算的方阵*/
 	private Matrix mat;
 	
 	/*================================方法 methods================================*/
 	
+	/**
+	 * 构造方法*/
 	public PowerMethod(Matrix m) {
 		this.mat = m;
+	}
+	
+	/**
+	 * 修改对矩阵m的引用*/
+	public void setMatrix(Matrix mat) {
+		this.mat = mat;
 	}
 	
 	/**
 	 * 求方阵m的（绝对值）最大特征值与对应的特征向量*/
 	public Eigen maxEigen() {
 		Eigen ret = null;
-		if(this.mat.isSquare()) {
+		if(this.mat != null && this.mat.isSquare()) {
 			ret = new Eigen();
+			ret.eigenvalues = new float[1];
 			int row = mat.getRow();				//行数或者列数，也是特征向量的维度
 			Matrix eigVector = new Matrix(row, 1, 1);				//（列）向量.初始化
 			Matrix x0 = mat.multiply(eigVector);
@@ -31,8 +42,36 @@ public class PowerMethod {
 				x0 = x1;
 				y = PowerMethod.divideMax(x1);					//归一化
 			}
-			ret.eigenvalue = PowerMethod.maxComponent(x1);
-			ret.eigenvector = PowerMethod.normalized(y);
+			ret.eigenvalues[0] = PowerMethod.maxComponent(x1);
+			ret.eigenvectors = PowerMethod.normalized(y);
+		}
+		return ret;
+	}
+	
+	/**
+	 * 求方阵mat的（绝对值）最大特征值与对应的特征向量
+	 * @param mat 方阵mat
+	 * @return （绝对值最大）特征值与对应的特征向量*/
+	public static Eigen maxEigen(Matrix mat) {
+		Eigen ret = null;
+		if(mat != null && mat.isSquare()) {
+			ret = new Eigen();
+			ret.eigenvalues = new float[1];
+			int row = mat.getRow();				//行数或者列数，也是特征向量的维度
+			Matrix eigVector = new Matrix(row, 1, 1);				//（列）向量.初始化
+			Matrix x0 = mat.multiply(eigVector);
+			Matrix x1;
+			Matrix y = PowerMethod.divideMax(x0);					//归一化;
+			while(true) {
+				x1 = mat.multiply(y);
+				if(PowerMethod.subFNorm(x1, x0, 2) < 1e-5) {
+					break;
+				}
+				x0 = x1;
+				y = PowerMethod.divideMax(x1);					//归一化
+			}
+			ret.eigenvalues[0] = PowerMethod.maxComponent(x1);
+			ret.eigenvectors = PowerMethod.normalized(y);
 		}
 		return ret;
 	}

@@ -166,4 +166,62 @@ public class MatrixTest {
 			assertEquals(diag.get(i, i), test[i], 1e-4);
 		}
 	}
+	
+	@Test
+	public void testDiag2() {
+		float[][] m = {{1, 4, 3}, {4, 5, 6}, {3, 6, 9}};
+		Matrix mat = new Matrix();
+		mat.load(m);
+		Matrix diag = Matrix.diag(mat);
+		/*
+		 * V =
+			0.8014    0.5013    0.3263
+   			-0.5885    0.5633    0.5800
+    		0.1070   -0.6568    0.7465
+
+		   D =
+			-1.5371         0         0
+         	0    1.5642         0
+         	0         0   14.9730
+		 * */
+		float[] test = {14.9730f, 1.5642f, -1.5371f};
+		for(int i = 0; i < diag.getRow(); i++) {
+			assertEquals(diag.get(i, i), test[i], 1e-4);
+		}
+	}
+	
+	@Test
+	public void testgetMaxTwoDiags() {
+		float[][] m = {{1, 2, 3, 4}, {5, 6, 7, 8}, {12, 11, 10, 9}, {16, 14, 13, 15}};
+		Matrix mat = new Matrix();
+		mat.load(m);
+		Eigen eig = Matrix.getMaxTwoDiags(mat);
+		/*
+		 * V =
+			-0.1594   -0.5113    0.3273    0.1444
+   			-0.3694   -0.4903   -0.7638   -0.0491
+   			-0.5233    0.5794    0.5455   -0.7734
+   			-0.7512    0.4031   -0.1091    0.6153
+
+		   D =
+			34.3380         0         0         0
+         	0   -3.6356         0         0
+         	0         0   -0.0000         0
+         	0         0         0    1.2977
+		 * */
+		int i, j;
+		float[] testValue = {34.3380f, -3.6356f, 1.2977f, 0};
+		for(i = 0; i < 2; i++) {
+			assertEquals(testValue[i], eig.eigenvalues[i], 1e-4);			//特征值
+		}
+		float[][] testVector = {{-0.1594f, -0.5113f, 0.1444f, 0.3273f},{-0.3694f, -0.4903f, -0.0491f, -0.7638f},{-0.5233f, 0.5794f, -0.7734f, 0.5455f},{-0.7512f, 0.4031f, 0.6153f, -0.1091f}};
+		int symble;
+		for(i = 0; i < 2; i++) {					//列
+			symble = 1;
+			if(testVector[0][i] * eig.eigenvectors.get(0, i) < 0) symble = -1;			//符号
+			for(j = 0; j < mat.getRow(); j++) {								//行
+				assertEquals(testVector[j][i] * symble, eig.eigenvectors.get(j, i), 1e-4);
+			}
+		}
+	}
 }

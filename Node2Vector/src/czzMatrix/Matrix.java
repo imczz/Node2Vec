@@ -231,6 +231,22 @@ public class Matrix {
 	}
 	
 	/**
+	 * 此矩阵加上与此矩阵同形的矩阵m
+	 * @param m 与此矩阵同形矩阵m*/
+	public Matrix new_add(Matrix m) {
+		Matrix ret = null;
+		if(this.row == m.getRow() && this.column == m.getColumn()) {
+			ret = new Matrix(this.row, this.column);
+			for(int i = 0; i < this.row; i++) {
+				for(int j = 0; j < this.column; j++) {
+					ret.set(i, j, this.matrix[i][j] + m.get(i, j));
+				}
+			}
+		}
+		return ret;
+	}
+	
+	/**
 	 * 将矩阵m复制r * c次，新矩阵相当于r行c列个m
 	 * @param m 被复制矩阵
 	 * @param rowTimes 行复制次数
@@ -459,7 +475,8 @@ public class Matrix {
 	}
 	
 	/**
-	 * QR分解，Q为正交矩阵，R为非奇异上三角矩阵，A=QR
+	 * 使用gram-schmit正交化的QR分解，Q为正交矩阵，R为非奇异上三角矩阵，A=QR（需要矩阵A非奇异，即满秩、向量线性无关）
+	 * @param A 方阵A
 	 * @return 数组0为Q，1为R*/
 	public static Matrix[] QR(Matrix A) {			//Gram–Schmidt正交化方式
 		Matrix[] ret = null;
@@ -506,11 +523,15 @@ public class Matrix {
 			}
 			ret[0] = B;								//Q为beta列单位化
 			//ret[1] = T.inverse();					//R为T的逆矩阵
-			ret[1] = B.transposition().multiply(A);		//R=Q^-1 * A(Q^T * A)
+			ret[1] = B.transposition().multiply(A);		//R=Q^T * A(Q^-1 * A)
 		}
 		return ret;
 	}
 	
+	/**
+	 * 通过QR分解迭代矩阵的所有特征值
+	 * @param m 方阵m
+	 * @return 特征值矩阵*/
 	public static Matrix diag(Matrix m) {
 		Matrix ret = null;
 		//int n = 0;
@@ -539,6 +560,75 @@ public class Matrix {
 		return ret;
 	}
 	
+	/**
+	 * 通过幂法求矩阵最大的2个特征值，与对应的特征向量
+	 * @param m 方阵m
+	 * @return 特征值数组与对应特征向量矩阵*/
+	static Eigen getMaxTwoDiags(Matrix m) {						//包可见（package）
+		Eigen ret = null;
+		if(m.isSquare()) {			//m为方阵，n
+			ret = new Eigen();
+			float[] eigenvalues = new float[2];	//特征值
+			Matrix eigenvectors = new Matrix(m.getRow(), 2, 0);			//只有两个特征向量
+			PowerMethod pm = new PowerMethod(m);
+			Eigen columnV;
+			columnV = pm.maxEigen();				//最大特征值与特征向量
+			eigenvalues[0] = columnV.eigenvalues[0];
+			int i;
+			for(i = 0; i < m.getRow(); i++) {		//行
+				eigenvectors.set(i, 0, columnV.eigenvectors.get(i, 0));			//将特征向量复制到对应（特征值的）位置
+			}
+			int notZero = -1;				//主特征值对应特征向量中的非零分量的序号
+			for(notZero = 0; notZero < m.getRow(); notZero++) {
+				if(Math.abs(columnV.eigenvectors.get(notZero, 0)) != 0) break;
+				if(notZero == m.getRow() - 1) notZero = -1;					//全部为0，不可能出现的情况
+			}
+			Matrix v = new Matrix(1, m.getColumn());		//x1' * v = 1， v有多种构造方式，这里把v设为一行而不是一列，便于后续向量相乘运算
+			//v=1/l1/x1i*(ai1, ai2, ……, ain)'	其中l1为绝对值最大特征值lamda1,x1i为l1对应特征向量x1中非0分量，i为这个分量的下标
+			//i也是矩阵A的行，也就是取得A的第i行，转置之后，除（l1 * x1i）i∈[0, n-1]
+			float divide = columnV.eigenvalues[0] * columnV.eigenvectors.get(notZero, 0);		//lamda1 * x1i
+			for(i = 0; i < m.getColumn(); i++) {				
+				v.set(0, i, m.get(notZero, i) / divide);
+			}
+			Matrix vectorM = columnV.eigenvectors.multiply(v);
+			vectorM.multiply(-columnV.eigenvalues[0]);
+			pm.setMatrix(m.new_add(vectorM));					//清除当前特征值的影响,B=A-l1*x1*v'
+			columnV = pm.maxEigen();				//次最大特征值与特征向量
+			eigenvalues[1] = columnV.eigenvalues[0];
+			//x2=(l2-l1)*y2 + l1*(v' * y2)*x1
+			float l2SubL1 = eigenvalues[1] - eigenvalues[0];
+			float l1MultiVTMultiY2 = eigenvalues[0] * v.multiply(columnV.eigenvectors).get(0, 0);
+			Matrix x2notNorm = new Matrix(m.getRow(), 1);				//没有归一化的特征向量
+			for(i = 0; i < m.getRow(); i++) {		//行
+				x2notNorm.set(i, 0, l2SubL1 * columnV.eigenvectors.get(i, 0) + l1MultiVTMultiY2 * eigenvectors.get(i, 0));		//求出未归一化的x2
+			}
+			float x2Norm2 = PowerMethod.getLength(x2notNorm);				//特征向量的模
+			for(i = 0; i < m.getRow(); i++) {		//行
+				eigenvectors.set(i, 1, x2notNorm.get(i, 0) / x2Norm2);		//将特征向量复制到对应（特征值的）位置
+			}
+			ret.eigenvalues = eigenvalues;
+			ret.eigenvectors = eigenvectors;
+		}
+		return ret;
+	}
+	
+	/**
+	 * 主成分分析法（Principal Component Analysis，PCA），将多个多维向量降维成2维，这样就便于画图
+	 * @param m 矩阵，每行是一个向量，每列是向量的分量
+	 * @return 每行是一个向量，2列
+	 * */
+	public Matrix PCA(Matrix m) {
+		Matrix ret = null;
+		if(m.getRow() > 0 && m.getColumn() > 2) {
+			Matrix covM = Matrix.cov(m);			//协方差矩阵;
+			Eigen max2Eigen = Matrix.getMaxTwoDiags(covM);			//协方差矩阵的（绝对值）最大两个特征值与对应的特征向量
+			ret = m.multiply(max2Eigen.eigenvectors);
+		}
+		return ret;
+	}
+	
+	/**
+	 * 转化为数组形式的字符串*/
 	public String toString() {
 		StringBuffer str = new StringBuffer();
 		str.append("[");

@@ -23,13 +23,13 @@ public class PowerMethodTest {
 		mat.load(m);
 		PowerMethod pm = new PowerMethod(mat);
 		Eigen eig = pm.maxEigen();
-		assertEquals(9.7202, eig.eigenvalue, 1e-4);
+		assertEquals(9.7202, eig.eigenvalues[0], 1e-4);
 		int i;
 		float[] eigvec = {-0.3716f, -0.6924f, -0.6185f};
 		int symble = 1;
-		if(eigvec[0] * eig.eigenvector.get(0, 0) < 0) symble = -1;			//协调特征向量正负
-		for(i = 0; i < eig.eigenvector.getRow(); i++) {
-			assertEquals(eigvec[i] * symble, eig.eigenvector.get(i, 0), 1e-4);			//特征向量正负问题
+		if(eigvec[0] * eig.eigenvectors.get(0, 0) < 0) symble = -1;			//协调特征向量正负
+		for(i = 0; i < eig.eigenvectors.getRow(); i++) {
+			assertEquals(eigvec[i] * symble, eig.eigenvectors.get(i, 0), 1e-4);			//特征向量正负问题
 		}
 	}
 
@@ -40,13 +40,13 @@ public class PowerMethodTest {
 		mat.load(m);
 		PowerMethod pm = new PowerMethod(mat);
 		Eigen eig = pm.maxEigen();
-		assertEquals(14.9730, eig.eigenvalue, 1e-4);
+		assertEquals(14.9730, eig.eigenvalues[0], 1e-4);
 		int i;
 		float[] eigvec = {0.3263f, 0.5800f, 0.7465f};
 		int symble = 1;
-		if(eigvec[0] * eig.eigenvector.get(0, 0) < 0) symble = -1;			//协调特征值正负
-		for(i = 0; i < eig.eigenvector.getRow(); i++) {
-			assertEquals(eigvec[i] * symble, eig.eigenvector.get(i, 0), 1e-4);			//特征向量正负问题
+		if(eigvec[0] * eig.eigenvectors.get(0, 0) < 0) symble = -1;			//协调特征值正负
+		for(i = 0; i < eig.eigenvectors.getRow(); i++) {
+			assertEquals(eigvec[i] * symble, eig.eigenvectors.get(i, 0), 1e-4);			//特征向量正负问题
 		}
 	}
 }
