@@ -23,12 +23,12 @@ public class KMeans<T> extends Cluster<T>{
 			int minIndex;
 			for(i = 0; i < k; i++) {
 				index = seeds[i];
-				this.nodes.get(index).label = i + 1;					//选择k个中心节点作为初始
+				this.nodes.get(index).label = i;					//选择k个中心节点作为初始
 				temp = this.nodes.get(i);
 				this.nodes.set(i, this.nodes.get(index));
 				this.nodes.set(index, temp);
 				temp = new ClusterNode<T>(null, this.nodes.get(i)._vector);			//初始化k个聚类质心
-				temp.label = i + 1;
+				temp.label = i;
 				arr.add(temp);
 				centerNum[i] = 1;					//中心有一个元素
 			}

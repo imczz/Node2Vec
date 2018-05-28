@@ -460,6 +460,17 @@ public class Word2Vec<T> {
 	}
 	
 	/**
+	 * 根据词典中词的索引获取单词
+	 * @param 某个词的索引
+	 * @return 这个词*/
+	public T getWordByIndex(int index) {
+		T ret = null;
+		HWord<T> word = this.vocabulary.getWordByIndex(index);
+		if(word != null) ret = word.word;
+    	return ret;
+	}
+	
+	/**
 	 * 输出到文件file
 	 * @param file 会被写入的文件路径
 	 * @throws IOException */

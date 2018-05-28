@@ -617,7 +617,7 @@ public class Matrix {
 	 * @param m 矩阵，每行是一个向量，每列是向量的分量
 	 * @return 每行是一个向量，2列
 	 * */
-	public Matrix PCA(Matrix m) {
+	public static Matrix PCA(Matrix m) {
 		Matrix ret = null;
 		if(m.getRow() > 0 && m.getColumn() > 2) {
 			Matrix covM = Matrix.cov(m);			//协方差矩阵;
