@@ -41,12 +41,16 @@ public class Graph4N2V<T> /*extends Graph */implements IGraph{
 	 @param isWeighted 带权图
 	 @return 装载结果， true：装载成功,false：装载失败*/
 	@Override
-	public boolean loadGraphFromFile(String file, String fileType, boolean isDirected, boolean isWeighted) {
+	public boolean loadGraphFromEdgelistFile(String file, String split, boolean isDirected, boolean isWeighted) {
 		boolean ret = false;
-		if(fileType.equals("edgelist")) {			//.edgelist文件
-			ret = this._G.loadGraphFromEdgeListFile(file, isDirected, isWeighted);
-		}
+		ret = this._G.loadGraphFromEdgeListFile(file, split, isDirected, isWeighted);
 		return ret;
+	}
+	
+
+	@Override
+	public int getNodeNumber() {
+		return this._G.getNodeNumber();
 	}
 	
 	/**

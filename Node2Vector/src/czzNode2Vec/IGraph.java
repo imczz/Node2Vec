@@ -7,7 +7,7 @@ public interface IGraph {
 	
 	/**
 	 从文件装载图*/
-	public boolean loadGraphFromFile(String name, String fileType, boolean isDirected, boolean isWeighted);
+	public boolean loadGraphFromEdgelistFile(String name, String split, boolean isDirected, boolean isWeighted);
 	
 	/**
 	 添加id为“id”的节点*/
@@ -48,6 +48,10 @@ public interface IGraph {
 	/**
 	 返回图的节点数组*/
 	public Integer[] nodesArray();
+	
+	/**
+	 * @return 节点个数*/
+	public int getNodeNumber();
 	
 	/**
 	 清空这个图*/

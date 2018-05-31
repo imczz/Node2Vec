@@ -102,6 +102,12 @@ public class Graph<T> {
 	}
 	
 	/**
+	 * @return 获取节点个数*/
+	public int getNodeNumber() {
+		return this._nodeList.size();
+	}
+	
+	/**
 	  添加一个节点（ID，名字）*/
 	public boolean addNode(int id, String name) {
 		boolean notexist = false;
@@ -381,10 +387,11 @@ public class Graph<T> {
 	/**
 	 从EdgeList文件加载一个图
 	 @param file 文件路径
+	 @param split 分隔符
 	 @param isDirected 是否为有向图
 	 @param isWeighted 是否为带权图
 	 @return 加载成功或失败*/
-	public boolean loadGraphFromEdgeListFile(String file, boolean isDirected, boolean isWeighted) {
+	public boolean loadGraphFromEdgeListFile(String file, String split, boolean isDirected, boolean isWeighted) {
 		boolean ret = false;			//返回值	
 		if(this.isEmpty()) {
 			try {
@@ -396,24 +403,79 @@ public class Graph<T> {
 	            Integer iWeight = null;
 	            bufread = new BufferedReader(new FileReader(fp));
 	            while ((read = bufread.readLine()) != null) {  //读取一行
-	            	numstr = read.split(" ");
+	            	numstr = read.split(split);
 	            	weight = 0;
 	            	id1 = Integer.parseInt(numstr[0]);
 	            	id2 = Integer.parseInt(numstr[1]);
-	            	if(numstr.length > 3) {
+	            	if(numstr.length > 2) {
 	            		weight = Integer.parseInt(numstr[2]);			//带权图，但是如果没有权值，weight = 0;
 	            	}
-	            	if(isDirected) {		//带权图
+	            	if(isWeighted) {		//带权图
 	            		iWeight = weight;
 	            	}
-	            	else {
+	            	else {					//无权图
 	            		iWeight = 1;
 	            	}
 	            	if(this.getNode(id1) == null) this.addNode(id1); 
 	            	if(this.getNode(id2) == null) this.addNode(id2);
 	            	if(this.getEdge(id1, id2) == null) this.addEdge(id1, id2, iWeight);
-	            	if(isWeighted) {
+	            	if(!isDirected) {		//无向图
 	            		if(this.getEdge(id2, id1) == null) this.addEdge(id2, id1, iWeight);
+	            	} 
+	            }  
+	            bufread.close();
+	            this._isDirected = isDirected;
+	            this._isWeighted = isWeighted;
+	            ret = true;					//加载成功
+	        } catch (FileNotFoundException ex) {  
+	            ex.printStackTrace();  
+	        } catch (IOException ex) {  
+	            ex.printStackTrace();  
+	        }
+		}
+		return ret;
+	}
+	
+	public boolean loadGraphFromNodeEdgeFile(String nodefile, String edgefile, boolean isDirected, boolean isWeighted) {
+		boolean ret = false;			//返回值
+		File fpnode = new File(nodefile);			//节点文件
+        File fpedge = new File(edgefile);			//边文件
+		if(this.isEmpty() && fpnode.exists() && fpedge.exists()){
+			try {
+	            BufferedReader bufread;
+	            String readLine;
+	            String[] numstr = null;
+	            int id1 = -1, id2 = -1, weight;
+	            Integer iWeight = null;
+	            bufread = new BufferedReader(new FileReader(fpnode));  //先读取节点文件
+	            while ((readLine = bufread.readLine()) != null) {
+	            	id1 = Integer.parseInt(readLine);
+	            	if(this.getNode(id1) == null) this.addNode(id1);
+	            	else {
+	            		//TODO：重复添加，可以考虑抛出一个异常
+	            	}
+	            }
+	            bufread.close();
+	            bufread = new BufferedReader(new FileReader(fpedge));  //再读取边文件
+	            while ((readLine = bufread.readLine()) != null) {  //读取一行
+	            	numstr = readLine.split(",");
+	            	weight = 0;
+	            	id1 = Integer.parseInt(numstr[0]);
+	            	id2 = Integer.parseInt(numstr[1]);
+	            	if(numstr.length > 2) {
+	            		weight = Integer.parseInt(numstr[2]);			//带权图，但是如果没有权值，weight = 0;
+	            	}
+	            	if(isWeighted) {		//带权图
+	            		iWeight = weight;
+	            	}
+	            	else {					//无权图
+	            		iWeight = 1;
+	            	}
+	            	if(this.getEdge(id1, id2) == null) this.addEdge(id1, id2, iWeight);
+	            	else ;//TODO：重复添加，可以考虑抛出一个异常;
+	            	if(!isDirected) {		//无向图
+	            		if(this.getEdge(id2, id1) == null) this.addEdge(id2, id1, iWeight);
+	            		else ;//TODO：重复添加，可以考虑抛出一个异常
 	            	} 
 	            }  
 	            bufread.close();

@@ -1,5 +1,10 @@
 package czzNode2Vec;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -10,6 +15,10 @@ import java.util.List;
 node2vec是图表上的表示学习算法框架。给定任何图，它可以学习节点的连续特征表示，然后可以用于各种下游机器学习任务。
 @author CZZ*/
 public class Node2Vec {
+	
+	/**
+	 遍历序列存储方式。ToArrayList：仅仅加入数组中，适用于小文件；ToFile：写入文件，适用于大图；Both：存于内存，同时写文件*/
+	public enum WalkStorage {ToArrayList, ToFile, Both};
 	
 	/**
 	 图（接口），处理的核心*/
@@ -28,8 +37,16 @@ public class Node2Vec {
 	private int _walk_length;
 	
 	/**
-	 路径的条数。Number of walks per source.*/
+	 从头到尾反复遍历次数。Number of walks per source.*/
 	private int _num_walks;
+	
+	/**
+	 * 遍历序列存储方式*/
+	WalkStorage walkStorage;
+	
+	/**
+	 * 遍历序列写入的目的文件*/
+	File storageFile;
 	
 	/**
 	 存储节点到邻居的可能性序列的结构<节点id，下一步选择器>*/
@@ -43,12 +60,14 @@ public class Node2Vec {
 	
 	/**
 	 从现存的图中构造*/
-	public Node2Vec(IGraph _G) {
+	public Node2Vec(IGraph _G, WalkStorage walkStorage, String walkStorageFileName) {
 		this._G = _G;
 		this._p = 1;
 		this._q = 1;
 		this._walk_length = 80;
 		this._num_walks = 10;
+		this.walkStorage = walkStorage;
+		if(walkStorage != WalkStorage.ToArrayList) getStorageFile(walkStorageFileName);
 		this._alias_nodes = new HashMap<Integer, NextWalkSelector>();
 		this._alias_edges = new HashMap<Integer, HashMap<Integer, NextWalkSelector>>();
 	}
@@ -108,6 +127,17 @@ public class Node2Vec {
 		this.setQ(q);
 		this.setWalk_length(_walk_length);
 		this.setNum_walks(_num_walks);
+	}
+	
+	private boolean getStorageFile(String walkStorageFileName) {
+		storageFile = new File(walkStorageFileName);
+        if (storageFile.exists())  storageFile.delete();		//删除存在文件
+        try {
+        	storageFile.createNewFile();				//创建新文件
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return true;
 	}
 	
 	/**
@@ -200,16 +230,65 @@ public class Node2Vec {
 	public ArrayList<Integer[]> simulate_walks() {
 		ArrayList<Integer[]> walks = new ArrayList<Integer[]>();
 		Integer[] nodes = this._G.nodesArray();
-		System.out.print("路径迭代");		//Walk iteration
+		StringBuffer walkBuff = new StringBuffer();				//写文件缓冲区
+		int lineNumber = 0;										//遍历序列行数
+		//System.out.print("路径迭代");		//Walk iteration
+		if(this.walkStorage != WalkStorage.ToArrayList) {	//写文件
+			try {
+		       	BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(this.storageFile, false)));
+				out.write(this._G.getNodeNumber() * this._num_walks + "\n");
+				out.flush();
+				out.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
 		for(int i = 0; i < this._num_walks; i++) {
-			System.out.println((i+1) +  "/" + this._num_walks);			//当前编号/总数
+			//System.out.println((i+1) +  "/" + this._num_walks);			//当前编号/总循环数
 			List<Integer> nodesArray = new ArrayList<Integer>();		
 			nodesArray = Arrays.asList(nodes);						//数组转化为列表
 			Collections.shuffle(nodesArray);						//打乱列表
 			nodes = nodesArray.toArray(nodes);						//列表转化为数组
+			Integer[] walk = null;
 			for(int j = 0; j < nodes.length; j++) {
-				walks.add(this.node2vec_walk(nodes[j]));
+				walk = this.node2vec_walk(nodes[j]);
+				if(this.walkStorage != WalkStorage.ToFile) {		//加入数组
+					walks.add(walk);
+				}
+				if(this.walkStorage != WalkStorage.ToArrayList) {	//写文件
+					for(int k = 0; k < walk.length; k++) {
+						walkBuff.append(walk[k]);
+						if(k < walk.length - 1) walkBuff.append(",");
+						else walkBuff.append("\n");					//一个序列
+					}
+					if(lineNumber >= 1023) {				//每1024条数据追加写入文件
+						try {
+				        	BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(this.storageFile, true)));
+							out.write(walkBuff.toString() + "\n");
+							out.flush();
+							out.close();
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+						walkBuff.delete(0, walkBuff.length());
+						lineNumber = 0;
+					}
+					else {
+						lineNumber++;
+					}
+				}
 			}	
+		}
+		if(walkBuff.length() > 0) {						//缓冲区还有内容
+			try {
+	        	BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(this.storageFile, true)));
+				out.write(walkBuff.toString());
+				out.flush();
+				out.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			walkBuff.delete(0, walkBuff.length());
 		}
 		/*Integer[][] ret = new Integer[walks.size()][];
 		ret = walks.toArray(ret);

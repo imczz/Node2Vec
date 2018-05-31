@@ -1,5 +1,10 @@
 package czzWord2Vec;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 
 /**
@@ -8,20 +13,66 @@ import java.util.ArrayList;
 public class Passage<T> {
 
 	/**
+	 * 文章存储方式，数组或者文件*/
+	public enum PassageStorage {ArrayList, File};
+	
+	/**
 	 * 句子*/
 	private ArrayList<T[]> _sentences;
+	
+	/**
+	 * 文章中的句子数量*/
+	private long count;
 	
 	/**
 	 * 读取指针*/
 	private int pointer;
 	
+	/**
+	 * 文章存储方式，数组或者文件*/
+	private PassageStorage passageStorage;
+	
+	/**
+	 * 文章所在文件*/
+	private File passageFile;
+	
+	/**
+	 * 读文件*/
+	private BufferedReader bufferedReader;
+	
 	/*================================方法 methods================================*/
 	
 	/**
 	 * 构造方法*/
-	public Passage() {
-		_sentences = new ArrayList<T[]>();
+	public Passage(PassageStorage passageStorage, String passageFileName) {
+		this.passageStorage = passageStorage;
+		if (passageStorage == PassageStorage.ArrayList)  _sentences = new ArrayList<T[]>();
+		else if (passageStorage == PassageStorage.File) getStorageFile(passageFileName);
+		count = 0;
 		pointer = -1;
+	}
+	
+
+	private boolean getStorageFile(String passageFileName) {
+		boolean ret = false;
+		passageFile = new File(passageFileName);
+        if (passageFile.exists()) {
+        	String readLine;
+        	try {
+				bufferedReader = new BufferedReader(new FileReader(this.passageFile));
+				if((readLine = bufferedReader.readLine()) != null){				//第一行，总行数
+					this.count = Integer.parseInt(readLine);
+				}
+				bufferedReader.close();
+			} catch (FileNotFoundException e1) {
+				e1.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+        	if(count > 0) ret = true;
+        }
+        else passageFile = null;
+		return ret;
 	}
 	
 	/**
@@ -32,8 +83,9 @@ public class Passage<T> {
 		pointer = -1;
 		for(int i = 0; i < words.length; i++) {
 			_sentences.add(words[i]);
+			count++;
 		}
-		if(_sentences.size() > 0) pointer = 0;
+		if(count > 0) pointer = 0;
 	}
 	
 	/**
@@ -43,13 +95,14 @@ public class Passage<T> {
 		_sentences.clear();					//清空
 		pointer = -1;
 		_sentences.addAll(words);
-		if(_sentences.size() > 0) pointer = 0;
+		count = _sentences.size();
+		if(count > 0) pointer = 0;
 	}
 	
 	/**
 	 * @return 句子数量*/
-	public int getSentenceCount() {
-		return _sentences.size();
+	public long getSentenceCount() {
+		return count;
 	}
 	
 	/**
@@ -72,14 +125,49 @@ public class Passage<T> {
 	}
 	
 	/**
-	 * @return 下一个句子*/
-	public T[] getNextSentence() {
-		T[] ret = null;
-		if(pointer >= 0) {
-			if(pointer >= _sentences.size()) pointer = 0;			//首尾相连
-			ret = _sentences.get(pointer++);
+	 * @return 下一个句子，从文件读取专用*/
+	public String[] getNextSentence() {
+		String[] ret = null;
+		if(passageStorage == PassageStorage.File) {
+			if(pointer >= this.count) pointer = 0;			//首尾相连
+			String readLine;
+			int sentenceCount = -1;
+			if(pointer <= 0) {								//重新打开文件
+				pointer = 0;
+				try {
+					bufferedReader = new BufferedReader(new FileReader(this.passageFile));
+					if((readLine = bufferedReader.readLine()) != null){				//第一行，总行数
+						sentenceCount = Integer.parseInt(readLine);
+					}
+				} catch (FileNotFoundException e1) {
+					e1.printStackTrace();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+			if(this.count == sentenceCount) {
+				try {
+			       	while ((readLine = bufferedReader.readLine()) != null) {  //读取一行
+			       		ret = readLine.split(",| ");
+			       	}
+			       	if(readLine == null) {
+			       		bufferedReader.close();
+			       	}
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+			else {
+				ret = null;
+			}
 		}
 		return ret;
+	}
+	
+	/**
+	 * @return 下一个句子编号*/
+	public int getPointer() {
+		return this.pointer;
 	}
 	
 	/**
@@ -88,7 +176,7 @@ public class Passage<T> {
 	 * @return 下一个句子*/
 	public T[] getSentence(int index) {
 		T[] ret = null;
-		if(index >= 0 && index < _sentences.size()) ret = _sentences.get(index);
+		if(index >= 0 && _sentences != null && index < _sentences.size()) ret = _sentences.get(index);
 		return ret;
 	}
 }

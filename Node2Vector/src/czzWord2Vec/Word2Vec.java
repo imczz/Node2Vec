@@ -12,6 +12,7 @@ import java.util.Random;
 
 import czzVector.CVector;
 import czzVector.IVector;
+import czzWord2Vec.Passage.PassageStorage;
 
 /**
  * word2vec是一种处理一种语言中词语关系的方式，是一种词语的“嵌入”方式（将单点One-hot表示转换为分布式Distributed表示）；
@@ -189,11 +190,14 @@ public class Word2Vec<T> {
 		this.learnRate = learnRate;
 	}
 	
+	/**
+	 * 初始化参数，因为是从数组中获得，容量有限，所以仅仅用于小规模图数据
+	 * @param words 句子数组*/
 	public void init(ArrayList<T[]> words) {
-		this.vocabulary = new Vocabulary<T>();
+		this.vocabulary = new Vocabulary<T>(Vocabulary.WordType.Integer);
 		this.vocabulary.loadVocabulary(words);
 		this.vocabulary.sortVocabulary();			//词典中的词语按照词频从小到大排序
-		this.passags = new Passage<T>();
+		this.passags = new Passage<T>(PassageStorage.ArrayList, "");
 		this.passags.loadSentences(words);
 		this.vocabulary.frequencyFilter(minWordCount);				//过滤低频词
 		if(this.trainMethod == TrainMethod.BOTH || this.trainMethod == TrainMethod.HS) {
@@ -206,6 +210,32 @@ public class Word2Vec<T> {
 		initModels();				//初始化参数
 		this.learnRate = this.startLearnRate;
 		initialized = true;
+	}
+	
+	/**
+	 * 初始化参数，从文章Passage中获得内容，文章可能是完全内存数据，也可能是从硬盘中读取
+	 * @param passags 训练数据文章*/
+	public void init(String passageFileName, int i) {
+		this.passags = new Passage<T>(PassageStorage.File, passageFileName);		//从文件读取，泛型类型T应该为String
+		this.vocabulary = new Vocabulary<T>(Vocabulary.WordType.String);
+		this.vocabulary.loadVocabulary(passags);
+		this.vocabulary.sortVocabulary();			//词典中的词语按照词频从小到大排序
+		this.vocabulary.frequencyFilter(minWordCount);				//过滤低频词
+		if(this.trainMethod == TrainMethod.BOTH || this.trainMethod == TrainMethod.HS) {
+			this.vocabulary.getHuffmanCode();			//建立哈夫曼树，获得每个词的编码
+		}
+		if(this.trainMethod == TrainMethod.BOTH || this.trainMethod == TrainMethod.NS) {
+			this.vocabulary.initUnigramTable();			//建立用于负采样的表
+		}
+		initModels();				//初始化参数
+		this.learnRate = this.startLearnRate;
+		initialized = true;
+	}
+	
+	/**
+	 * 从文件初始化*/
+	public void init(String wordFile) {
+		
 	}
 	
 	/**

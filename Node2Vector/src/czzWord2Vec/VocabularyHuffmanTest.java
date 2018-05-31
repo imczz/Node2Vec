@@ -21,7 +21,7 @@ public class VocabularyHuffmanTest {
 
 	@Test
 	public void testHuffman() {
-		Vocabulary<String> V = new Vocabulary<String>();
+		Vocabulary<String> V = new Vocabulary<String>(Vocabulary.WordType.String);
 		String str = "a a b b b c c c c c d d d d e e e e f f f f f f f";
 		/*2 a a
 		3 b b b

@@ -177,12 +177,12 @@ public class UIFrame extends JFrame {
             	String filePath = graphFile.getText();
             	if(filePath != null) {
             		Graph = new Graph4N2V<Integer>();
-            		Graph.loadGraphFromFile(filePath, "edgelist", false, false);
-            		n2v = new Node2Vec(Graph);
+            		Graph.loadGraphFromEdgelistFile(filePath, " |,", false, false);
+            		n2v = new Node2Vec(Graph, Node2Vec.WalkStorage.Both, "E:\\walks.txt");
             		n2v.setParams(1, 1, 80, 10);
             		ArrayList<Integer[]> walks = n2v.simulate_walks();
             		//上：图的遍历； 下：通过遍历序列学习节点的向量表示
-            		w2v = new Word2Vec<Integer>(ModelType.Skip_gram, TrainMethod.BOTH, 5, 128, 5, 0.025f, 5, 3, 1);
+            		w2v = new Word2Vec<Integer>(ModelType.Skip_gram, TrainMethod.HS, 5, 128, 5, 0.025f, 5, 3, 1);
             		w2v.init(walks);
             		w2v.startTrainning();
             		IVector[] models = w2v.getModels();
@@ -196,7 +196,7 @@ public class UIFrame extends JFrame {
             		for(int i = 0; i < models.length; i++) {
             			cluster.addNode(w2v.getWordByIndex(i), models[i]);
             		}
-            		kCategories = 3;							//分成3类
+            		kCategories = 2;							//分成3类
             		cluster.runCluster(kCategories);
             		ArrayList<ClusterNode<Integer>> clusterResult = cluster.getNodes();
             		//上：聚类分析； 下：主成分分析
@@ -220,7 +220,7 @@ public class UIFrame extends JFrame {
             		}
             		for(int i = 0; i < kCategories; i++) {
             			cs.addPointSet(categories[i]);
-            			categories[i].getViewPointSet().set(getRandomColor(), Color.BLACK, 2, 8);		//给每个点集涂色
+            			categories[i].getViewPointSet().set(getRandomColor(), Color.BLACK, 2, 16);		//给每个点集涂色
             			categories[i].getViewPointSet().uniformlySet();
             		}
             		cs.draw(cs.getCanvas().getGraphics());

@@ -12,6 +12,10 @@ import java.util.Random;
 public class Vocabulary<T> implements IVocabulary{
 
 	/**
+	 * 词典中单词类型*/
+	public enum WordType {String, Integer};
+	
+	/**
 	 词典*/
 	private ArrayList<HWord<T> > _vocabulary;
 	
@@ -54,11 +58,13 @@ public class Vocabulary<T> implements IVocabulary{
 	
 	private boolean _isSorted;
 	
+	private WordType wordType;
+	
 	/*================================方法 methods================================*/
 	
 	/**
 	 * 空参数构造方法*/
-	public Vocabulary() {
+	public Vocabulary(WordType wordType) {
 		this._vocabulary = new ArrayList<HWord<T> >();
 		this._wordIndex = new HashMap<T, Integer>();
 		this._isSorted = false;
@@ -67,6 +73,7 @@ public class Vocabulary<T> implements IVocabulary{
 		this._vocabularyLength = 0;
 		this._unigramTableSize = 100000;
 		this._unigramTable = null;
+		this.wordType = wordType;
 	}
 	
 	/**
@@ -151,6 +158,22 @@ public class Vocabulary<T> implements IVocabulary{
 			}
 		}
 		_isSorted = false;
+	}
+	
+	/**
+	 * 从文章装载词典，文章中获得的词一定是字符串*/
+	@SuppressWarnings("unchecked")
+	public void loadVocabulary(Passage<T> passage) {
+		String[] arr;
+		if(this.wordType == WordType.String) {
+			for(int i = 0; i < passage.getSentenceCount(); i++) {
+				arr = passage.getNextSentence();
+				for(int j = 0; j < arr.length; j++) {
+					addWord((T) arr[j]);
+				}
+			}
+			_isSorted = false;
+		}
 	}
 	
 	/**
