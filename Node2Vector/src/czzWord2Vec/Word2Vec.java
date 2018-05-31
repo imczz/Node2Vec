@@ -29,12 +29,20 @@ public class Word2Vec<T> {
 	public enum TrainMethod {HS, NS, BOTH};
 	
 	/**
+	 * 单词类型*/
+	public enum WordType {String, Integer};
+	
+	/**
 	 * 模型类型*/
 	private ModelType modelType;
 	
 	/**
 	 * 训练方式*/
 	private TrainMethod trainMethod;
+	
+	/**
+	 * 单词类型*/
+	private WordType wordType;
 	
 	/**
 	 词向量维度，也是神经网络隐藏层的神经元个数*/
@@ -118,7 +126,8 @@ public class Word2Vec<T> {
 	 * @param iteratorNumber 全部样本迭代次数
 	 * @param threadNumber 并行线程数
 	 * */
-	public Word2Vec(ModelType modelType, TrainMethod trainMethod, int negative, int dimensions, int windowSize, float learnRate, int minWordCount, int iteratorNumber, int threadNumber) {
+	public Word2Vec(WordType wordType, ModelType modelType, TrainMethod trainMethod, int negative, int dimensions, int windowSize, float learnRate, int minWordCount, int iteratorNumber, int threadNumber) {
+		this.wordType = wordType;
 		expTable = new ExpTable();
 		initialized = false;
 		setParam(modelType, trainMethod, negative, dimensions, windowSize, learnRate, minWordCount, iteratorNumber, threadNumber);
@@ -318,6 +327,7 @@ public class Word2Vec<T> {
 	
 	/**
 	 * 开始训练*/
+	@SuppressWarnings("unchecked")
 	public void startTrainning() {
 		if(this.initialized) {				//经过初始化
 			int localIteratorNumber = 1;			//当前迭代次数
@@ -334,7 +344,13 @@ public class Word2Vec<T> {
 			int cw;				//CBOW上下文计数
 			for(localIteratorNumber = 1; localIteratorNumber <= this.iteratorNumber; localIteratorNumber++) { //迭代次数
 				for(int sentenceIndex = 0; sentenceIndex < this.passags.getSentenceCount(); sentenceIndex++) {
-					T[] sentence = this.passags.getSentence(sentenceIndex);
+					T[] sentence = null;
+					if(this.wordType == WordType.Integer) {
+						sentence = this.passags.getSentence(sentenceIndex);
+					}
+					else if(this.wordType == WordType.String){
+						sentence= (T[]) this.passags.getNextSentence();
+					}
 					for(int sentence_position = 0; sentence_position < sentence.length; sentence_position++) {
 						randomWindow = (rand.nextInt() + 11) % this.windowSize;		//randomWindow = [0, windowSize - 1],随机窗口大小windowSize - randomWindow = [1, windowSize]
 						wordIndex = this.vocabulary.getWordIndex(sentence[sentence_position]);

@@ -25,7 +25,7 @@ public class Word2VecTest {
 	public void testRandomSetVector() {
 		int n = 100;
 		int d = 8;
-		Word2Vec<Integer> w2v = new Word2Vec<Integer>(ModelType.Skip_gram, TrainMethod.HS, 0, d, 5, 0.025f, 5, 3, 1);
+		Word2Vec<Integer> w2v = new Word2Vec<Integer>(Word2Vec.WordType.Integer, ModelType.Skip_gram, TrainMethod.HS, 0, d, 5, 0.025f, 5, 3, 1);
 		IVector[] _models = new IVector[n];
 		for(int i = 0; i < n; i++) {
 			_models[i] = new CVector(d);

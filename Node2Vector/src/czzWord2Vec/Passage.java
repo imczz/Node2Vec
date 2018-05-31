@@ -46,10 +46,10 @@ public class Passage<T> {
 	 * 构造方法*/
 	public Passage(PassageStorage passageStorage, String passageFileName) {
 		this.passageStorage = passageStorage;
-		if (passageStorage == PassageStorage.ArrayList)  _sentences = new ArrayList<T[]>();
-		else if (passageStorage == PassageStorage.File) getStorageFile(passageFileName);
 		count = 0;
 		pointer = -1;
+		if (passageStorage == PassageStorage.ArrayList)  _sentences = new ArrayList<T[]>();
+		else if (passageStorage == PassageStorage.File) getStorageFile(passageFileName);
 	}
 	
 
@@ -126,8 +126,9 @@ public class Passage<T> {
 	
 	/**
 	 * @return 下一个句子，从文件读取专用*/
-	public String[] getNextSentence() {
-		String[] ret = null;
+	public Integer[] getNextSentence() {
+		String[] numstr = null;
+		Integer[] ret = null;
 		if(passageStorage == PassageStorage.File) {
 			if(pointer >= this.count) pointer = 0;			//首尾相连
 			String readLine;
@@ -144,21 +145,30 @@ public class Passage<T> {
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
-			}
-			if(this.count == sentenceCount) {
-				try {
-			       	while ((readLine = bufferedReader.readLine()) != null) {  //读取一行
-			       		ret = readLine.split(",| ");
-			       	}
-			       	if(readLine == null) {
-			       		bufferedReader.close();
-			       	}
-				} catch (IOException e) {
-					e.printStackTrace();
+				if(sentenceCount != this.count) {
+					//TODO:文件读取错误
 				}
 			}
-			else {
-				ret = null;
+			try {
+				if ((readLine = bufferedReader.readLine()) != null) {  //读取一行
+					numstr = readLine.split(",| ");
+			   		if(numstr.length > 0) {
+			   			ret = new Integer[numstr.length];
+			   			for(int i = 0; i < numstr.length; i++) {
+			   				ret[i] = Integer.parseInt(numstr[i]);
+			   			}
+			   		}
+			       	pointer++;
+				}
+				if(readLine == null) {				//文件读到头了
+					if(pointer != this.count) {
+						System.out.println("数据行数计数出错");
+					}
+					pointer = -1;
+					bufferedReader.close();
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
 			}
 		}
 		return ret;

@@ -164,7 +164,7 @@ public class Vocabulary<T> implements IVocabulary{
 	 * 从文章装载词典，文章中获得的词一定是字符串*/
 	@SuppressWarnings("unchecked")
 	public void loadVocabulary(Passage<T> passage) {
-		String[] arr;
+		Integer[] arr;
 		if(this.wordType == WordType.String) {
 			for(int i = 0; i < passage.getSentenceCount(); i++) {
 				arr = passage.getNextSentence();

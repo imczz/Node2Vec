@@ -33,4 +33,9 @@ public class HWord<T> extends Word<T>{
 		point = new ArrayList<Integer>();
 	}
 
+	/**
+	 * ²é¿´word*/
+	public String toString() {
+		return (String) super.word;
+	}
 }
