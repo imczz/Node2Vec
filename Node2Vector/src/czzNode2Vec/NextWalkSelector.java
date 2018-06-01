@@ -11,8 +11,12 @@ import czzSelectItem.Selector;
 public class NextWalkSelector {
 	
 	/**
+	 * 选择算法，Normal:普通算法（轮盘赌法），Alias：别名选择发*/
+	public enum Algorithm {Normal, Alias};
+	
+	/**
 	 选择的选择算法*/
-	private int _algorithm;
+	private Algorithm _algorithm;
 	
 	/**
 	 规范化（加和为1）的概率*/
@@ -42,14 +46,14 @@ public class NextWalkSelector {
 	 @param neighbors 邻居节点id数组
 	 @param probability 节点id对应的概率数组
 	 @param normalized 是否将概率数组归一化*/
-	public NextWalkSelector(int algorithm, Integer[] neighbors, float[] probabilities, boolean normalized){
+	public NextWalkSelector(Algorithm algorithm, Integer[] neighbors, float[] probabilities, boolean normalized){
 		this._algorithm = algorithm;
 		this._neighbors = neighbors;
 		this._probabilities = probabilities;
 		this._normalized = normalized;
 		this._sum = getProbSum();					//未求和
 		normalized();
-		if(algorithm == 1) {
+		if(algorithm == Algorithm.Alias) {			//别名选择
 			if(!this._normalized) {
 				this._normalized = true;
 				normalized();
@@ -118,9 +122,9 @@ public class NextWalkSelector {
 	 根据用户选择的算法，选择下一步的节点
 	 @return 下一步的id*/
 	public int getItemRandomly() {
-		int ret;
-		if(this._algorithm == 1) ret =  aliasSelect();
-		else ret =  czzBucketSelect();
+		int ret = -1;
+		if(this._algorithm == Algorithm.Alias) ret =  aliasSelect();
+		else if(this._algorithm == Algorithm.Normal) ret = czzBucketSelect();
 		return ret;
 	}
 }

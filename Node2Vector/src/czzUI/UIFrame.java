@@ -64,13 +64,27 @@ public class UIFrame extends JFrame {
 	
 	/**
 	 * Word2Vec*/
-	Word2Vec<Integer> w2v;
+	Word2Vec<String> w2v;
 	
+	/**
+	 * 嵌入向量数组*/
+	IVector[] models;
+	
+	/**
+	 * 聚类数*/
 	int kCategories;
 	
 	/**
 	 * 聚类分析*/
 	Cluster<Integer> cluster;
+	
+	/**
+	 * 聚类分析结果*/
+	ArrayList<ClusterNode<Integer>> clusterResult;
+	
+	/**
+	 * 降维结果*/
+	Matrix pca;
 	
 	/*================================方法 methods================================*/
 	
@@ -149,13 +163,31 @@ public class UIFrame extends JFrame {
 	private void initToolBar() {
 		JToolBar toolBar = new JToolBar();//实例化工具条
 		this.add(toolBar, BorderLayout.NORTH);
+		JButton selectGraphFileButton = new JButton("选择文件");
 		JButton loadGraphButton = new JButton("加载图");
+		JButton traverseGraphButton = new JButton("遍历图");
+		JButton embeddingButton = new JButton("嵌入向量");
+		JButton clusterButton = new JButton("聚类分析");
+		JButton dimensionReductionButton = new JButton("降维分析");
+		JButton paintButton = new JButton("画图");
 		JButton run = new JButton("运行");
 		JTextArea graphFile = new JTextArea("");
-		toolBar.add(loadGraphButton);
-		toolBar.add(run);
+		JTextArea walskFile = new JTextArea("walks.txt");
+		JTextArea embFile = new JTextArea("karate_czz.emb");
+		JTextArea kCategoriesText = new JTextArea("4");
+		toolBar.add(selectGraphFileButton);
 		toolBar.add(graphFile);
-		loadGraphButton.addActionListener(new ActionListener() {
+		toolBar.add(loadGraphButton);
+		toolBar.add(traverseGraphButton);
+		toolBar.add(walskFile);
+		toolBar.add(embeddingButton);
+		toolBar.add(embFile);
+		toolBar.add(clusterButton);
+		toolBar.add(dimensionReductionButton);
+		toolBar.add(paintButton);
+		toolBar.add(run);
+		
+		selectGraphFileButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
             	JFileChooser fc = new JFileChooser();
@@ -171,37 +203,144 @@ public class UIFrame extends JFrame {
             }
         });
 		
+		loadGraphButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+            	String filePath = graphFile.getText();
+            	if(filePath != null && filePath.length() > 0) {
+            		Graph = new Graph4N2V<Integer>();
+            		Graph.loadGraphFromEdgelistFile(filePath, " |,", false, false);
+            		System.out.print("图文件载入内存完成");
+            	}
+            }
+        });
+		
+		traverseGraphButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+            	String walksFilePath = walskFile.getText();
+            	if(Graph != null && walksFilePath.length() > 0) {
+            		n2v = new Node2Vec(Graph, Node2Vec.WalkStorage.ToFile, walksFilePath);
+            		n2v.setParams(1, 1, 80, 10);
+            		ArrayList<Integer[]> walks = n2v.simulate_walks();
+            		System.out.print("Node2Vec遍历完成");
+            		if(walks == null || (walks != null && walks.size() == 0)) {
+            			System.out.println("，遍历序列存储在文件之中");
+            		}
+            	}
+            }
+        });
+		
+		embeddingButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+            	String walksFilePath = walskFile.getText();
+            	String embFilePath = embFile.getText();
+            	if(walksFilePath.length() > 0 && embFilePath.length() > 0) {
+            		w2v = new Word2Vec<String>(Word2Vec.WordType.String, ModelType.Skip_gram, TrainMethod.HS, 5, 128, 5, 0.025f, 5, 3, 1);
+            		w2v.init(walksFilePath, 1);
+            		w2v.startTrainning();
+            		models = w2v.getModels();
+            		try {
+						w2v.outputFile(embFilePath);
+					} catch (IOException e1) {
+						e1.printStackTrace();
+					}
+            		System.out.println("Word2Vec嵌入词向量完成");
+            	}
+            }
+        });
+		
+		clusterButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+            	kCategories = Integer.parseInt(kCategoriesText.getText());
+            	if(kCategories > 1 && w2v != null && models != null && models.length > 0) {
+            		cluster = new KMeans<Integer>();
+            		for(int i = 0; i < models.length; i++) {
+            			cluster.addNode(Integer.parseInt(w2v.getWordByIndex(i)), models[i]);
+            		}
+            		cluster.runCluster(kCategories);
+            		clusterResult = cluster.getNodes();
+            		System.out.println("k均值聚类分析完成");
+            	}
+            }
+        });
+		
+		dimensionReductionButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+            	if(w2v != null && models != null && models.length > 0) {
+            		Matrix vectors = new Matrix(models.length, w2v.getDimensions());
+            		for(int i = 0; i < models.length; i++) {
+            			for(int j = 0; j < w2v.getDimensions(); j++) {
+            				vectors.set(i, j, models[i].getVector()[j]);			//行向量
+            			}
+            		}
+            		pca = Matrix.PCA(vectors);				//主成分分析法
+            	}
+            }
+        });
+		
+		paintButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+            	if(kCategories > 0 && w2v != null && models != null && models.length > 0 && clusterResult.size() > 0 && pca != null && pca.getRow() == models.length) {
+            		Point screenLT = new Point(-2, 2);				//（0,0）整个屏幕在第四象限
+            		cs = new CoordinateSystem(canvas, screenLT, 400, 200);
+            		//setCoordinateSystem(cs);
+            		PointSet[] categories = new PointSet[kCategories];
+            		for(int i = 0; i < kCategories; i++) {
+            			categories[i] = new PointSet();
+            		}
+            		for(int i = 0; i < models.length; i++) {
+            			categories[clusterResult.get(i).label].addPoint(new Point(pca.get(i, 0), pca.get(i, 1)));
+            		}
+            		for(int i = 0; i < kCategories; i++) {
+            			cs.addPointSet(categories[i]);
+            			categories[i].getViewPointSet().set(getRandomColor(), Color.BLACK, 2, 16);		//给每个点集涂色
+            			categories[i].getViewPointSet().uniformlySet();
+            		}
+            		cs.draw(cs.getCanvas().getGraphics());
+            	}
+            }
+        });
+		
 		run.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
             	String filePath = graphFile.getText();
-            	if(filePath != null) {
+            	if(filePath != null && filePath.length() > 0) {
             		Graph = new Graph4N2V<Integer>();
             		Graph.loadGraphFromEdgelistFile(filePath, " |,", false, false);
-            		n2v = new Node2Vec(Graph, Node2Vec.WalkStorage.ToFile, "E:\\walks.txt");
+            		System.out.print("图文件载入内存完成");
+            		n2v = new Node2Vec(Graph, Node2Vec.WalkStorage.ToFile, "walks.txt");
             		n2v.setParams(1, 1, 80, 10);
             		ArrayList<Integer[]> walks = n2v.simulate_walks();
-            		if(walks == null) {
-            			System.out.println("遍历序列存储在文件之中");
+            		System.out.print("Node2Vec遍历完成");
+            		if(walks == null || (walks != null && walks.size() == 0)) {
+            			System.out.println("，遍历序列存储在文件之中");
             		}
             		//上：图的遍历； 下：通过遍历序列学习节点的向量表示
-            		w2v = new Word2Vec<Integer>(Word2Vec.WordType.String, ModelType.Skip_gram, TrainMethod.HS, 5, 128, 5, 0.025f, 5, 3, 1);
-            		w2v.init("E:\\walks.txt", 1);
+            		w2v = new Word2Vec<String>(Word2Vec.WordType.String, ModelType.Skip_gram, TrainMethod.HS, 5, 128, 5, 0.025f, 5, 3, 1);
+            		w2v.init("walks.txt", 1);
             		w2v.startTrainning();
-            		IVector[] models = w2v.getModels();
+            		models = w2v.getModels();
             		try {
 						w2v.outputFile("karate_czz.emb");
 					} catch (IOException e1) {
 						e1.printStackTrace();
 					}
+            		System.out.println("Word2Vec嵌入词向量完成");
             		//上：word2vec； 下：k均值聚类分析
             		cluster = new KMeans<Integer>();
             		for(int i = 0; i < models.length; i++) {
-            			cluster.addNode(w2v.getWordByIndex(i), models[i]);
+            			cluster.addNode(Integer.parseInt(w2v.getWordByIndex(i)), models[i]);
             		}
             		kCategories = 2;							//分成3类
             		cluster.runCluster(kCategories);
-            		ArrayList<ClusterNode<Integer>> clusterResult = cluster.getNodes();
+            		clusterResult = cluster.getNodes();
+            		System.out.println("k均值聚类分析完成");
             		//上：聚类分析； 下：主成分分析
             		Matrix vectors = new Matrix(models.length, w2v.getDimensions());
             		for(int i = 0; i < models.length; i++) {
@@ -209,7 +348,7 @@ public class UIFrame extends JFrame {
             				vectors.set(i, j, models[i].getVector()[j]);			//行向量
             			}
             		}
-            		Matrix pca = Matrix.PCA(vectors);				//主成分分析
+            		pca = Matrix.PCA(vectors);				//主成分分析
             		//上：主成分分析； 下： 可视化
             		Point screenLT = new Point(-2, 2);				//（0,0）整个屏幕在第四象限
             		cs = new CoordinateSystem(canvas, screenLT, 400, 200);

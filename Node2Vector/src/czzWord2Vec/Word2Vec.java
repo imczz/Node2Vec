@@ -226,7 +226,12 @@ public class Word2Vec<T> {
 	 * @param passags 训练数据文章*/
 	public void init(String passageFileName, int i) {
 		this.passags = new Passage<T>(PassageStorage.File, passageFileName);		//从文件读取，泛型类型T应该为String
-		this.vocabulary = new Vocabulary<T>(Vocabulary.WordType.String);
+		if(this.wordType == WordType.Integer) {
+			this.vocabulary = new Vocabulary<T>(Vocabulary.WordType.Integer);
+		}
+		else if(this.wordType == WordType.String) {
+			this.vocabulary = new Vocabulary<T>(Vocabulary.WordType.String);
+		}
 		this.vocabulary.loadVocabulary(passags);
 		this.vocabulary.sortVocabulary();			//词典中的词语按照词频从小到大排序
 		this.vocabulary.frequencyFilter(minWordCount);				//过滤低频词
@@ -346,10 +351,10 @@ public class Word2Vec<T> {
 				for(int sentenceIndex = 0; sentenceIndex < this.passags.getSentenceCount(); sentenceIndex++) {
 					T[] sentence = null;
 					if(this.wordType == WordType.Integer) {
-						sentence = this.passags.getSentence(sentenceIndex);
+						sentence= (T[]) this.passags.getNextSentenceInteger();
 					}
 					else if(this.wordType == WordType.String){
-						sentence= (T[]) this.passags.getNextSentence();
+						sentence= (T[]) this.passags.getNextSentenceString();
 					}
 					for(int sentence_position = 0; sentence_position < sentence.length; sentence_position++) {
 						randomWindow = (rand.nextInt() + 11) % this.windowSize;		//randomWindow = [0, windowSize - 1],随机窗口大小windowSize - randomWindow = [1, windowSize]

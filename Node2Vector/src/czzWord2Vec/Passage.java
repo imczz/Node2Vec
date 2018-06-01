@@ -126,9 +126,22 @@ public class Passage<T> {
 	
 	/**
 	 * @return 下一个句子，从文件读取专用*/
-	public Integer[] getNextSentence() {
-		String[] numstr = null;
+	public Integer[] getNextSentenceInteger() {
 		Integer[] ret = null;
+		String[] numstr = getNextSentenceString();
+		if(numstr != null && numstr.length > 0) {
+			ret = new Integer[numstr.length];
+			for(int i = 0; i < numstr.length; i++) {
+				ret[i] = Integer.parseInt(numstr[i]);
+			}
+		}
+		return ret;
+	}
+	
+	/**
+	 * @return 下一个句子，从文件读取专用*/
+	public String[] getNextSentenceString() {
+		String[] ret = null;
 		if(passageStorage == PassageStorage.File) {
 			if(pointer >= this.count) pointer = 0;			//首尾相连
 			String readLine;
@@ -151,13 +164,7 @@ public class Passage<T> {
 			}
 			try {
 				if ((readLine = bufferedReader.readLine()) != null) {  //读取一行
-					numstr = readLine.split(",| ");
-			   		if(numstr.length > 0) {
-			   			ret = new Integer[numstr.length];
-			   			for(int i = 0; i < numstr.length; i++) {
-			   				ret[i] = Integer.parseInt(numstr[i]);
-			   			}
-			   		}
+					ret = readLine.split(",| ");
 			       	pointer++;
 				}
 				if(readLine == null) {				//文件读到头了
@@ -170,6 +177,9 @@ public class Passage<T> {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
+		}
+		else if(passageStorage == PassageStorage.File) {
+			ret = (String[]) this._sentences.get(pointer++);
 		}
 		return ret;
 	}

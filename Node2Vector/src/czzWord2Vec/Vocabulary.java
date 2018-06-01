@@ -164,16 +164,24 @@ public class Vocabulary<T> implements IVocabulary{
 	 * 从文章装载词典，文章中获得的词一定是字符串*/
 	@SuppressWarnings("unchecked")
 	public void loadVocabulary(Passage<T> passage) {
-		Integer[] arr;
-		if(this.wordType == WordType.String) {
-			for(int i = 0; i < passage.getSentenceCount(); i++) {
-				arr = passage.getNextSentence();
-				for(int j = 0; j < arr.length; j++) {
-					addWord((T) arr[j]);
+		Integer[] arrInteger;
+		String[] arrString;
+		for(int i = 0; i < passage.getSentenceCount(); i++) {
+			if(this.wordType == WordType.String) {
+				arrString = passage.getNextSentenceString();
+				for(int j = 0; j < arrString.length; j++) {
+					addWord((T) arrString[j]);
 				}
 			}
-			_isSorted = false;
+			else if(this.wordType == WordType.Integer){
+				arrInteger = passage.getNextSentenceInteger();
+				for(int j = 0; j < arrInteger.length; j++) {
+					addWord((T) arrInteger[j]);
+				}
+			}
+			
 		}
+		_isSorted = false;
 	}
 	
 	/**

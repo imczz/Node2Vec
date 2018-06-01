@@ -11,6 +11,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
+import czzNode2Vec.NextWalkSelector.Algorithm;
+
 /**
 node2vec是图表上的表示学习算法框架。给定任何图，它可以学习节点的连续特征表示，然后可以用于各种下游机器学习任务。
 @author CZZ*/
@@ -153,7 +155,7 @@ public class Node2Vec {
 			for(int i = 0; i < n; i++) {
 				probabilitys[i] = this._G.getEdgeWeight(id, neighbors[i]);
 			}
-			nws = new NextWalkSelector(1, neighbors, probabilitys, false);
+			nws = new NextWalkSelector(Algorithm.Normal, neighbors, probabilitys, false);
 			this._alias_nodes.put(id, nws);
 		}
 		return(nws.getItemRandomly());
@@ -188,7 +190,7 @@ public class Node2Vec {
 					probabilitys[i] = this._G.getEdgeWeight(dst, dst_neighbors[i]) / q;
 				}
 			}
-			nws = new NextWalkSelector(1, dst_neighbors, probabilitys, false);
+			nws = new NextWalkSelector(Algorithm.Normal, dst_neighbors, probabilitys, false);
 			srcHashMap.put(dst, nws);
 		}
 		return(nws.getItemRandomly());
@@ -244,7 +246,7 @@ public class Node2Vec {
 			}
 		}
 		for(int i = 0; i < this._num_walks; i++) {
-			//System.out.println((i+1) +  "/" + this._num_walks);			//当前编号/总循环数
+			System.out.println((i+1) +  "/" + this._num_walks);			//当前编号/总循环数
 			List<Integer> nodesArray = new ArrayList<Integer>();		
 			nodesArray = Arrays.asList(nodes);						//数组转化为列表
 			Collections.shuffle(nodesArray);						//打乱列表
