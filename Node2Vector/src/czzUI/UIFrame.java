@@ -9,7 +9,10 @@ import java.awt.MenuBar;
 import java.awt.MenuItem;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
@@ -32,6 +35,7 @@ import czzClusterAnalysis.KMeans;
 import czzMatrix.Matrix;
 import czzNode2Vec.Graph4N2V;
 import czzNode2Vec.Node2Vec;
+import czzVector.CVector;
 import czzVector.IVector;
 import czzWord2Vec.Word2Vec;
 import czzWord2Vec.Word2Vec.ModelType;
@@ -65,6 +69,10 @@ public class UIFrame extends JFrame {
 	/**
 	 * Word2Vec*/
 	Word2Vec<String> w2v;
+	
+	/**
+	 * 模型词向量对应的词*/
+	Integer[] modelsName;
 	
 	/**
 	 * 嵌入向量数组*/
@@ -182,6 +190,8 @@ public class UIFrame extends JFrame {
 		toolBar.add(walskFile);
 		toolBar.add(embeddingButton);
 		toolBar.add(embFile);
+		toolBar.addSeparator();
+		toolBar.add(kCategoriesText);
 		toolBar.add(clusterButton);
 		toolBar.add(dimensionReductionButton);
 		toolBar.add(paintButton);
@@ -241,6 +251,16 @@ public class UIFrame extends JFrame {
             		w2v.init(walksFilePath, 1);
             		w2v.startTrainning();
             		models = w2v.getModels();
+            		modelsName = new Integer[models.length];
+            		for(int i = 0; i < models.length; i++) {
+            			if(w2v.getWordByIndex(i).equals("")) {
+                			modelsName[i] = Integer.parseInt("-" + i);			//没有名字的向量
+                			System.out.println("error :" + i);
+                		}
+                		else {
+                			modelsName[i] = Integer.parseInt(w2v.getWordByIndex(i));
+                		}
+            		}
             		try {
 						w2v.outputFile(embFilePath);
 					} catch (IOException e1) {
@@ -255,10 +275,14 @@ public class UIFrame extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
             	kCategories = Integer.parseInt(kCategoriesText.getText());
-            	if(kCategories > 1 && w2v != null && models != null && models.length > 0) {
+            	String embFilename = embFile.getText();
+            	if(kCategories > 1 && models == null && embFilename.length() > 0) {
+            		loadModelFile(embFilename);						//从文件装载模型文件
+            	}
+            	if(kCategories > 1 && models != null && models.length > 0 && modelsName != null && modelsName.length == models.length) {
             		cluster = new KMeans<Integer>();
             		for(int i = 0; i < models.length; i++) {
-            			cluster.addNode(Integer.parseInt(w2v.getWordByIndex(i)), models[i]);
+            			cluster.addNode(modelsName[i], models[i]);
             		}
             		cluster.runCluster(kCategories);
             		clusterResult = cluster.getNodes();
@@ -270,14 +294,16 @@ public class UIFrame extends JFrame {
 		dimensionReductionButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-            	if(w2v != null && models != null && models.length > 0) {
-            		Matrix vectors = new Matrix(models.length, w2v.getDimensions());
+            	if(models != null && models.length > 0) {
+            		int dimension = models[0].getSize();
+            		Matrix vectors = new Matrix(models.length, dimension);
             		for(int i = 0; i < models.length; i++) {
-            			for(int j = 0; j < w2v.getDimensions(); j++) {
+            			for(int j = 0; j < dimension; j++) {
             				vectors.set(i, j, models[i].getVector()[j]);			//行向量
             			}
             		}
             		pca = Matrix.PCA(vectors);				//主成分分析法
+            		System.out.println("降维计算完成");
             	}
             }
         });
@@ -285,7 +311,7 @@ public class UIFrame extends JFrame {
 		paintButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-            	if(kCategories > 0 && w2v != null && models != null && models.length > 0 && clusterResult.size() > 0 && pca != null && pca.getRow() == models.length) {
+            	if(kCategories > 0 && models != null && models.length > 0 && clusterResult.size() > 0 && pca != null && pca.getRow() == models.length) {
             		Point screenLT = new Point(-2, 2);				//（0,0）整个屏幕在第四象限
             		cs = new CoordinateSystem(canvas, screenLT, 400, 200);
             		//setCoordinateSystem(cs);
@@ -381,6 +407,62 @@ public class UIFrame extends JFrame {
 		blue = rand.nextInt(256);
 		Color color = new Color(red, green, blue);
 		return color;
+	}
+	
+	private boolean loadModelFile(String modelFileName) {
+		boolean ret = false;
+		try {
+            File fp = new File(modelFileName);
+            BufferedReader bufread;
+            String read;
+            String[] splitStr = null;
+            int number = 0, dimension = 0;
+            int i, j;
+            bufread = new BufferedReader(new FileReader(fp));
+            if((read = bufread.readLine()) != null){
+            	splitStr = read.split(" |,");
+            	number = Integer.parseInt(splitStr[0]);						//向量个数
+            	dimension = Integer.parseInt(splitStr[1]);					//向量维度
+            }
+            if(number > 0 && dimension > 0) {
+            	this.models = new IVector[number];
+            	this.modelsName = new Integer[number];
+            	i = 0;
+            	for(i = 0; i < number; i++) {
+            		if ((read = bufread.readLine()) != null){
+            			splitStr = read.split(" |,");
+                    	if(splitStr.length == dimension + 1) {					//向量名，向量分量
+                    		if(splitStr[0].equals("")) {
+                    			this.modelsName[i] = Integer.parseInt("-" + i);			//没有名字的向量
+                    			System.out.println("error :" + i);
+                    		}
+                    		else {
+                    			this.modelsName[i] = Integer.parseInt(splitStr[0]);
+                    		}
+                    		this.models[i] = new CVector(dimension);
+                    		for(j = 0; j < dimension; j++) {
+                    			this.models[i].getVector()[j] = Float.parseFloat(splitStr[j + 1]);
+                    		}
+                    	}
+                    	else break;
+            		}
+                	else break;
+                }
+            	if(i == number) ret = true;					//加载成功
+            	else {										//加载失败，清空models
+            		for(j = 0; j < i; j++) {
+            			this.models[j] = null;
+            		}
+            		this.models = null;
+            	}
+            }
+            bufread.close();
+        } catch (FileNotFoundException ex) {  
+            ex.printStackTrace();  
+        } catch (IOException ex) {  
+            ex.printStackTrace();  
+        }
+		return ret;
 	}
 	
 	/**
