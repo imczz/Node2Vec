@@ -83,6 +83,7 @@ public class Node<T> {
 	public Node(int id, String name, T element){
 		this._id = id;
 		this.name = name;
+		this.element = element;
 		this._in_Degree = 0;
 		this._out_Degree = 0;
 		this._degree = 0;

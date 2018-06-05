@@ -119,6 +119,17 @@ public class Graph<T> {
 	}
 	
 	/**
+	  添加一个节点（ID，名字，节点内容）*/
+	public boolean addNode(int id, String name, T element) {
+		boolean notexist = false;
+		if(_nodeList.get(id) == null) {
+			_nodeList.put(id, new Node<T>(id, name, element));
+			notexist = true;
+		}
+		return notexist;
+	}
+	
+	/**
 	  添加一个节点（id）*/
 	public boolean addNode(int id) {
 		return addNode(id, null);

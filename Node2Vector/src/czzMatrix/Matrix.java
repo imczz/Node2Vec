@@ -231,15 +231,16 @@ public class Matrix {
 	}
 	
 	/**
-	 * 此矩阵加上与此矩阵同形的矩阵m
-	 * @param m 与此矩阵同形矩阵m*/
-	public Matrix new_add(Matrix m) {
+	 * 矩阵m1加上与m1矩阵同形的矩阵m2
+	 * @param m1 矩阵m1
+	 * @param m2 矩阵m2*/
+	public static Matrix add(Matrix m1, Matrix m2) {
 		Matrix ret = null;
-		if(this.row == m.getRow() && this.column == m.getColumn()) {
-			ret = new Matrix(this.row, this.column);
-			for(int i = 0; i < this.row; i++) {
-				for(int j = 0; j < this.column; j++) {
-					ret.set(i, j, this.matrix[i][j] + m.get(i, j));
+		if(m1.row == m2.getRow() && m1.column == m2.getColumn()) {
+			ret = new Matrix(m1.row, m1.column);
+			for(int i = 0; i < m1.row; i++) {
+				for(int j = 0; j < m1.column; j++) {
+					ret.set(i, j, m1.matrix[i][j] + m2.get(i, j));
 				}
 			}
 		}
@@ -592,7 +593,7 @@ public class Matrix {
 			}
 			Matrix vectorM = columnV.eigenvectors.multiply(v);
 			vectorM.multiply(-columnV.eigenvalues[0]);
-			pm.setMatrix(m.new_add(vectorM));					//清除当前特征值的影响,B=A-l1*x1*v'
+			pm.setMatrix(Matrix.add(m,vectorM));					//清除当前特征值的影响,B=A-l1*x1*v'
 			columnV = pm.maxEigen();				//次最大特征值与特征向量
 			eigenvalues[1] = columnV.eigenvalues[0];
 			//x2=(l2-l1)*y2 + l1*(v' * y2)*x1
