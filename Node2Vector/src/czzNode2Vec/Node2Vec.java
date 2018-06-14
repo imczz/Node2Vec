@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
+import czzLog.Log;
 import czzNode2Vec.NextWalkSelector.Algorithm;
 
 /**
@@ -247,6 +248,7 @@ public class Node2Vec {
 		}
 		for(int i = 0; i < this._num_walks; i++) {
 			System.out.println((i+1) +  "/" + this._num_walks);			//当前编号/总循环数
+			Log.addMessage((i+1) +  "/" + this._num_walks);
 			List<Integer> nodesArray = new ArrayList<Integer>();		
 			nodesArray = Arrays.asList(nodes);						//数组转化为列表
 			Collections.shuffle(nodesArray);						//打乱列表

@@ -32,6 +32,7 @@ import czz2D.PointSet;
 import czzClusterAnalysis.Cluster;
 import czzClusterAnalysis.ClusterNode;
 import czzClusterAnalysis.KMeans;
+import czzLog.Log;
 import czzMatrix.Matrix;
 import czzNode2Vec.Graph4N2V;
 import czzNode2Vec.Node2Vec;
@@ -179,6 +180,8 @@ public class UIFrame extends JFrame {
 		JButton dimensionReductionButton = new JButton("降维分析");
 		JButton paintButton = new JButton("画图");
 		JButton run = new JButton("运行");
+		JButton clearLog = new JButton("清空");
+		JButton outLog = new JButton("日志");
 		JTextArea graphFile = new JTextArea("");
 		JTextArea walskFile = new JTextArea("walks.txt");
 		JTextArea embFile = new JTextArea("karate_czz.emb");
@@ -196,6 +199,8 @@ public class UIFrame extends JFrame {
 		toolBar.add(dimensionReductionButton);
 		toolBar.add(paintButton);
 		toolBar.add(run);
+		toolBar.add(clearLog);
+		toolBar.add(outLog);
 		
 		selectGraphFileButton.addActionListener(new ActionListener() {
             @Override
@@ -218,9 +223,12 @@ public class UIFrame extends JFrame {
             public void actionPerformed(ActionEvent e) {
             	String filePath = graphFile.getText();
             	if(filePath != null && filePath.length() > 0) {
+            		Log.clear();
+            		Log.addMessage("图载入内存中");
             		Graph = new Graph4N2V<Integer>();
             		Graph.loadGraphFromEdgelistFile(filePath, " |,", false, false);
             		System.out.print("图文件载入内存完成");
+            		Log.addMessage("图文件载入内存完成");
             	}
             }
         });
@@ -230,10 +238,12 @@ public class UIFrame extends JFrame {
             public void actionPerformed(ActionEvent e) {
             	String walksFilePath = walskFile.getText();
             	if(Graph != null && walksFilePath.length() > 0) {
+            		Log.addMessage("Node2Vec遍历开始");
             		n2v = new Node2Vec(Graph, Node2Vec.WalkStorage.ToFile, walksFilePath);
             		n2v.setParams(1, 1, 80, 10);
             		ArrayList<Integer[]> walks = n2v.simulate_walks();
             		System.out.print("Node2Vec遍历完成");
+            		Log.addMessage("Node2Vec遍历完成");
             		if(walks == null || (walks != null && walks.size() == 0)) {
             			System.out.println("，遍历序列存储在文件之中");
             		}
@@ -247,6 +257,7 @@ public class UIFrame extends JFrame {
             	String walksFilePath = walskFile.getText();
             	String embFilePath = embFile.getText();
             	if(walksFilePath.length() > 0 && embFilePath.length() > 0) {
+            		Log.addMessage("Word2Vec嵌入词向量开始");
             		w2v = new Word2Vec<String>(Word2Vec.WordType.String, ModelType.Skip_gram, TrainMethod.HS, 5, 128, 5, 0.025f, 5, 3, 1);
             		w2v.init(walksFilePath, 1);
             		w2v.startTrainning();
@@ -267,6 +278,7 @@ public class UIFrame extends JFrame {
 						e1.printStackTrace();
 					}
             		System.out.println("Word2Vec嵌入词向量完成");
+            		Log.addMessage("Word2Vec嵌入词向量完成");
             	}
             }
         });
@@ -280,6 +292,7 @@ public class UIFrame extends JFrame {
             		loadModelFile(embFilename);						//从文件装载模型文件
             	}
             	if(kCategories > 1 && models != null && models.length > 0 && modelsName != null && modelsName.length == models.length) {
+            		Log.addMessage("k均值聚类分析开始");
             		cluster = new KMeans<Integer>();
             		for(int i = 0; i < models.length; i++) {
             			cluster.addNode(modelsName[i], models[i]);
@@ -287,6 +300,7 @@ public class UIFrame extends JFrame {
             		cluster.runCluster(kCategories);
             		clusterResult = cluster.getNodes();
             		System.out.println("k均值聚类分析完成");
+            		Log.addMessage("k均值聚类分析完成");
             	}
             }
         });
@@ -295,6 +309,7 @@ public class UIFrame extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
             	if(models != null && models.length > 0) {
+            		Log.addMessage("降维计算开始");
             		int dimension = models[0].getSize();
             		Matrix vectors = new Matrix(models.length, dimension);
             		for(int i = 0; i < models.length; i++) {
@@ -304,6 +319,7 @@ public class UIFrame extends JFrame {
             		}
             		pca = Matrix.PCA(vectors);				//主成分分析法
             		System.out.println("降维计算完成");
+            		Log.addMessage("降维计算完成");
             	}
             }
         });
@@ -328,6 +344,7 @@ public class UIFrame extends JFrame {
             			categories[i].getViewPointSet().uniformlySet();
             		}
             		cs.draw(cs.getCanvas().getGraphics());
+            		System.out.println(Log.getAll());
             	}
             }
         });
@@ -395,6 +412,20 @@ public class UIFrame extends JFrame {
             	}
             }
         });
+		
+		clearLog.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+            	Log.clear();
+            }
+		});
+		
+		outLog.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+            	System.out.println(Log.getAll());
+            }
+		});
 	}
 	
 	/**
